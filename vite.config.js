@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import eslint from 'vite-plugin-eslint'
 import { copyFile, unlink, symlink } from 'node:fs/promises';
+import { fileURLToPath, URL } from 'url'
 
 // https://vite.dev/config/
 export default defineConfig(({command, mode}) => {
@@ -43,22 +44,42 @@ export default defineConfig(({command, mode}) => {
     }
   }
   else if(command === 'serve') {
-    return {
-      plugins: [
-        react(),
-        {
-          name: 'prebuild',
-          buildStart(options) {
-            //delete src/index.jsx if it exists. either way, create a link to a suitable implementation.
-            unlink('src/index.jsx').then(link_index,
-                                         link_index);
+    if(mode === 'test') {
+      return {
+        plugins: [react()],
+        test: {
+          environment: 'jsdom',
+          //globals: true,
+          setupFiles: './src/test/config/setupTests.js',
+          include: ['src/test/*.?(c|m)[jt]s?(x)'],
+          pool: 'vmThreads',
+        },
+        resolve: {
+          alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
           },
         },
-        eslint()
-      ],
+      }
+    }
+    else if(mode === 'development' || mode === 'msw') {
+      return {
+        plugins: [
+          react(),
+          {
+            name: 'prebuild',
+            buildStart(options) {
+              //delete src/index.jsx if it exists. either way, create a link to a suitable implementation.
+              unlink('src/index.jsx').then(link_index,
+                                           link_index);
+            },
+          },
+          eslint(),
+        ],
+      }
+    }
+    else {
+      throw Error('Check vite.config.js.\n       Command:' + command + '\n       Mode: ' + mode);
     }
   }
-  else {
-    throw Error('Check vite.config.js');
-  }
+  throw Error('Check vite.config.js.\n       Command:' + command + '\n       Mode: ' + mode);
 })
