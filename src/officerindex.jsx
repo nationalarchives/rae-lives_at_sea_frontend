@@ -17,18 +17,7 @@ export default function OfficerIndex() {
   const navigate = useNavigate();
   useEffect(() => {
     const fetchData = async() => {
-      const socket = new WebSocket('ws://' + import.meta.env.VITE_QUERYER_ADDR + ':' + import.meta.env.VITE_QUERYER_PORT);
-      socket.onmessage = (e) => {
-        if(e.data === 'NULL') {
-          setData([]);
-        }
-        else {
-          const data = JSON.parse(e.data);
-          setData(data);
-        }
-        socket.close();
-      };
-      socket.onopen = () => { socket.send('L@S:OfficerNames:' + letter) };
+      return Promise.reject(new Error('Officers not yet implemented'));
     }
     fetchData();
   }, [letter]);
