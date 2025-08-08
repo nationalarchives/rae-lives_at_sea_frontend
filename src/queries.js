@@ -396,18 +396,7 @@ function mainPersonQF({queryKey}) {
       }).then((apiData)=>translateFromAPI(apiData));
     }
     else if(sailorType === 'officer') {
-      return new Promise((resolve, reject) => {
-        const socket = new WebSocket('ws://' + import.meta.env.VITE_QUERYER_ADDR + ':' + import.meta.env.VITE_QUERYER_PORT);
-        socket.onerror = (e) => { reject(e); };
-        socket.onmessage = (e) => {
-          if(e.data === 'NULL') {
-            reject(new Error('Bad response'));
-          }
-          resolve(JSON.parse(e.data));
-          socket.close();
-        };
-        socket.onopen = () => { socket.send('L@S:Officer:' + nameId) };
-      });
+      return Promise.reject(new Error('Officers not yet implemented'));
     }
     else {
       return new Promise((resolve, reject) => reject(new Error('Bad sailor type' + sailorType)));
@@ -573,20 +562,7 @@ export const piecesQuery = {
 
 function simpleTableQueryFn({queryKey}) {
   const [, table] = queryKey;
-  return new Promise((resolve, reject) => {
-    const socket = new WebSocket('ws://' + import.meta.env.VITE_QUERYER_ADDR + ':' + import.meta.env.VITE_QUERYER_PORT);
-    socket.onerror = (e) => { reject(e); };
-    socket.onmessage = (e) => {
-      if(e.data === 'NULL') {
-        resolve([]);
-      }
-      else {
-        resolve(JSON.parse(e.data));
-      }
-      socket.close();
-    };
-    socket.onopen = () => { socket.send('L@S:SimpleData:' + table) };
-  });
+  return Promise.reject(new Error('simpleTableQueryFn not yet implemented'));
 }
 
 export const simpleTableQuery = (table) => ({
