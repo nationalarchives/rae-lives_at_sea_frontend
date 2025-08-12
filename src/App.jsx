@@ -3,7 +3,6 @@ import LaSAppBar from './lasappbar';
 import { useEffect } from 'react';
 import { routes } from './routes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { broadcastQueryClient } from '@tanstack/query-broadcast-client-experimental';
@@ -76,7 +75,6 @@ function App() {
             <LaSAppBar/>
             <Stack sx={{paddingTop: '20px'}}>
               <PersistQueryClientProvider client={queryClient} persistOptions={{persister: createSyncStoragePersister({storage: window.localStorage})}}>
-                <ReactQueryDevtools initialIsOpen={false} />
                 {routes}
               </PersistQueryClientProvider>
             </Stack>
@@ -93,7 +91,6 @@ function App() {
             <LaSAppBar/>
             <Stack sx={{paddingTop: '20px'}}>
               <QueryClientProvider client={queryClient}>
-                <ReactQueryDevtools initialIsOpen={false} />
                 {routes}
               </QueryClientProvider>
             </Stack>
