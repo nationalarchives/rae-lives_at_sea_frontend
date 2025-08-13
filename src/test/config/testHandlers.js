@@ -8,6 +8,9 @@ const { diff } = require('node:util');
 //http.get(import.meta.env.VITE_API_ROOT + 'person', () => passthrough()), //NB An empty callback seems to work just as well as explicit call to passthrough(). So far as I can tell, returning (anything? an HttpResponse?) stops the request gettig sent out to the network, but otherwise it is sent and returned as if it had not been intercepted.
 
 export const handlers = [
+  http.get(import.meta.env.VITE_API_ROOT + 'person/lastpost', ({request}) => {
+    return HttpResponse.text('Not found', {status: 404}); //TODO: Might want to check what message the API returns, 'Not found' is just a placeholder
+  }),
   http.get(import.meta.env.VITE_API_ROOT + 'person', ({request}) => {
     const search_params = new URL(request.url).searchParams;
     if(search_params.has('personid')) {
