@@ -331,6 +331,7 @@ describe('data flow', () => {
       });
     }
   });
+  describe.todo('edit field individually', ()=>{}); //need tests that actually enter data into each field and confirm that it gets posted correctly. Much like the 'clear' tests below, except involve typing rather than just clearing
   describe('clear person individually', () => {
     for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
       fullPersonTest('full text ' + field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
