@@ -132,12 +132,12 @@ const FIXTURES = (function(){
           serviceTable1 = null;
         },
         notWW1: async({component}, use) => {
-          notWW1 = await component.findByTestId('notWW1');
+          notWW1 = await component.findByTestId('notww1');
           await use(notWW1);
           notWW1 = null;
         },
         errorToggle: async({component}, use) => {
-          errorToggle = await component.findByTestId('errorToggle');
+          errorToggle = await component.findByTestId('error');
           await use(errorToggle);
           errorToggle = null;
         },
