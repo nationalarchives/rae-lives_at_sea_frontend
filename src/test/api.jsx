@@ -11,7 +11,7 @@ import { union, intersection, difference, random, range, isEqual } from 'lodash'
 //Following tricks https://stackoverflow.com/a/72289488, http://pawelgoscicki.com/archives/2022/05/testing-usenavigate-navigate-from-react-router-v6/, https://mayashavin.com/articles/two-shades-of-mocking-vitest to spy on useParams
 import * as router from 'react-router';
 
-const N_MULTITESTS = 10; //number of "multi-field" tests to apply per block that has a multi-field option
+const N_MULTITESTS = import.meta.env.VITE_TEST_N_MULTITESTS ? import.meta.env.VITE_TEST_N_MULTITESTS : 10; //number of "multi-field" tests to apply per block that has a multi-field option
 
 //This is encapsualated to prevent tests from accidentally picking up null variables or any state accidentally left hanging
 const FIXTURES = (function(){
