@@ -6,9 +6,12 @@ import { cleanup } from '@testing-library/react';
 import Person from '@/person.jsx';
 import { describe, test as baseTest, vi } from 'vitest';
 import { dump } from './config/testutils';
+import { random, range, isEqual } from 'lodash';
 
 //Following tricks https://stackoverflow.com/a/72289488, http://pawelgoscicki.com/archives/2022/05/testing-usenavigate-navigate-from-react-router-v6/, https://mayashavin.com/articles/two-shades-of-mocking-vitest to spy on useParams
 import * as router from 'react-router';
+
+const N_MULTITESTS = 10; //number of "multi-field" tests to apply per block that has a multi-field option
 
 //This is encapsualated to prevent tests from accidentally picking up null variables or any state accidentally left hanging
 const FIXTURES = (function(){
@@ -225,6 +228,55 @@ function findPersonTableField(fieldId, personTable) {
   return within(personTable).findByTestId(fieldId).then((x)=>x.querySelector('input'));
 }
 
+function randomCases() {
+  const testcases = [];
+  for(let i = 0; i < N_MULTITESTS; i++) { //just loop this many times
+    const TOTAL_FIELDS = EDITABLE_PERSON_TEXT_FIELDS.length;
+
+    //we test minimum 2 fields, if that's more than are in the array then we will have a problem
+    if(2 >= TOTAL_FIELDS) { throw new Error(); }
+
+    //randomly select n_fields fields to include in the test case
+    //all fields must be different
+    //no two test cases are allowed to contain the exact same fields
+    let retry_count = 0;
+    let testcase = null;
+    do {
+      const n_fields = random(2, TOTAL_FIELDS, false); // number of fields to include in this testcase
+                                                                             // 2 <= nfields <= number of editable fields (also an integer)
+      const fields = range(0, TOTAL_FIELDS); //all the possible field indices
+      const candidate = []; //candidate test case
+      while(fields.length > TOTAL_FIELDS - n_fields) { //sampling without replacement
+        const fieldIndex = random(0, fields.length - 1);
+        candidate.push(fields[fieldIndex]);
+        fields.splice(fieldIndex, 1);
+      }
+      testcase = candidate;
+    } while(function(){ //keep going until we have a testcase checking a unique set of fields
+      const testcaseSorted = testcase.toSorted();
+      for(const existingCase of testcases) {
+        if(isEqual(testcaseSorted, existingCase.toSorted())) {
+          retry_count++;
+          if(retry_count < 10) {
+            return true;
+          }
+          else { //avoid massive slowness/infinite loop
+            throw new Error('Retry count exceeded while generated unique random tests');
+          }
+        }
+      }
+      retry_count = 0;
+      return false;
+    }());
+    testcases.push(testcase);
+  }
+  const expandedTestcases = [];
+  for(const testcase of testcases) {
+    expandedTestcases.push(testcase.map((x) => EDITABLE_PERSON_TEXT_FIELDS[x]));
+  }
+  return expandedTestcases;
+}
+
 const it = baseTest.extend(FIXTURES.dataTest());
 const fullPersonTest  = baseTest.extend(FIXTURES.dataTest(9999999901));
 const emptyPersonTest = baseTest.extend(FIXTURES.dataTest(9999999902));
@@ -297,158 +349,278 @@ describe('data flow', () => {
 
   //TODO: This is a UI test, not an API test. Move it somewhere appropriate.
   //The clue is that I do not need to access the postSpy in any form
-  describe('trim individually', () => {
-    for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-      fullPersonTest('post-trim full text ' + field, async ({expect, user, personTable, personCommitButton}) => { //Confirm that all input person data gets trimmed. Doesn't really need to be the 'full' data, just need to start somewhere. But using real data lets me confirm that the trimmed text results in something un-submittable.
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const baseText = fieldComponent.getAttribute('value');
+  describe('trim', () => {
+    describe('text', () => {
+      describe('individual', () => {
+        describe('post-trim', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            fullPersonTest(field, async ({expect, user, personTable, personCommitButton}) => { //Confirm that all input person data gets trimmed. Doesn't really need to be the 'full' data, just need to start somewhere. But using real data lets me confirm that the trimmed text results in something un-submittable.
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const baseText = fieldComponent.getAttribute('value');
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, baseText + '  {Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe(baseText);
-        await expectUnpressable(expect, user, personCommitButton);
-      });
-      fullPersonTest('pre-trim full text ' + field, async ({expect, user, personTable, personCommitButton}) => { //Confirm that all input person data gets trimmed. Doesn't really need to be the 'full' data, just need to start somewhere. But using real data lets me confirm that the trimmed text results in something un-submittable.
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const baseText = fieldComponent.getAttribute('value');
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, baseText + '  {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(baseText);
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
+        describe('pre-trim', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            fullPersonTest('pre-trim full text ' + field, async ({expect, user, personTable, personCommitButton}) => { //Confirm that all input person data gets trimmed. Doesn't really need to be the 'full' data, just need to start somewhere. But using real data lets me confirm that the trimmed text results in something un-submittable.
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const baseText = fieldComponent.getAttribute('value');
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, ' ' + baseText + '{Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe(baseText);
-        await expectUnpressable(expect, user, personCommitButton);
-      });
-      emptyPersonTest('trim empty text ' + field, async ({expect, user, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const baseText = fieldComponent.getAttribute('value');
-        expect(baseText).toBe('');
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, ' ' + baseText + '{Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(baseText);
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
+        describe('empty trim', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            emptyPersonTest('trim empty text ' + field, async ({expect, user, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const baseText = fieldComponent.getAttribute('value');
+              expect(baseText).toBe('');
 
-        await user.type(fieldComponent, '    ' + baseText + '{Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe(baseText);
-        await expectUnpressable(expect, user, personCommitButton);
+              await user.type(fieldComponent, '    ' + baseText + '{Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(baseText);
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
       });
-    }
-    for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
-      fullPersonTest('post-trim numeric ' + field, async ({expect, user, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const base = fieldComponent.getAttribute('value');
-        expect(base).toMatch(/^\d+$/);
+    });
+    describe('numeric', () => {
+      describe('individual', () => {
+        describe('post-trim', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            fullPersonTest(field, async ({expect, user, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).toMatch(/^\d+$/);
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, base + ' {Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe(base);
-        await expectUnpressable(expect, user, personCommitButton);
-      });
-      fullPersonTest('pre-trim numeric ' + field, async ({expect, user, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const base = fieldComponent.getAttribute('value');
-        expect(base).toMatch(/^\d+$/);
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, base + ' {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(base);
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
+        describe('pre-trim', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            fullPersonTest('pre-trim numeric ' + field, async ({expect, user, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).toMatch(/^\d+$/);
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, ' ' + base + ' {Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe(base);
-        await expectUnpressable(expect, user, personCommitButton);
-      });
-      emptyPersonTest('trim empty numeric ' + field, async ({expect, user, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        const base = fieldComponent.getAttribute('value');
-        expect(base).toBe('0');
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, ' ' + base + ' {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(base);
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
+        describe('empty trim', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            emptyPersonTest('trim empty numeric ' + field, async ({expect, user, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).toBe('0');
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '     {Enter}');
-        expect(fieldComponent.getAttribute('value')).toBe('0');
-        await expectUnpressable(expect, user, personCommitButton);
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '     {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe('0');
+              await expectUnpressable(expect, user, personCommitButton);
+            });
+          }
+        });
       });
-    }
+    });
   });
 
   //Tests that actually enter data into each field and confirm that it gets posted correctly.
   //Much like the 'clear' tests below, except involve typing rather than just clearing.
-  //The ones that start from empty text will serve as "new data entry". The ones that that start with data will serve as editing tests.
-  describe('edit field individually', () => {
+  //The ones that start from empty text ("insert") will serve as new data entry.
+  //The ones that that start with data ("edit") will serve as editing existing data.
+  //Test every field individually. Also randomly test combinations of fields (exhaustive testing is possible but too much buck for bang).
+  describe('edit', () => {
     describe('update', () => {
-      for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-        fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-          const fieldComponent = await findPersonTableField(field, personTable);
-          const base = fieldComponent.getAttribute('value');
-          expect(base).not.toBe(''); //precondition
-          await user.type(fieldComponent, 'newthing{Enter}');
-          await user.click(personCommitButton);
-          const { body } = await getLastPost();
-          expect(body.person[field]).toBe(base + 'newthing');
-        });
-      }
+      describe('random', () => {
+        for(const testcase of randomCases()) {
+          fullPersonTest(testcase.join(', '), async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+            const expectedFields = {};
+            for(let i = 0; i < testcase.length; i++) {
+              const field = testcase[i];
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).not.toBe(''); //precondition
+              await user.type(fieldComponent, `newthing foo${i}bar{Enter}`);
+              expectedFields[field] =  base + `newthing foo${i}bar`;
+            }
+            await user.click(personCommitButton);
+            const { body } = await getLastPost();
+            expect(body.person).toMatchObject(expectedFields);
+          });
+        }
+      });
+      describe('individual', () => {
+        for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+          fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+            const fieldComponent = await findPersonTableField(field, personTable);
+            const base = fieldComponent.getAttribute('value');
+            expect(base).not.toBe(''); //precondition
+            await user.type(fieldComponent, 'newthing{Enter}');
+            await user.click(personCommitButton);
+            const { body } = await getLastPost();
+            expect(body.person[field]).toBe(base + 'newthing');
+          });
+        }
+      });
     });
     describe('insert', () => {
-      for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-        emptyPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-          const fieldComponent = await findPersonTableField(field, personTable);
-          const base = fieldComponent.getAttribute('value');
-          expect(base).toBe(''); //precondition
-          await user.type(fieldComponent, 'newthing{Enter}');
-          await user.click(personCommitButton);
-          const { body } = await getLastPost();
-          expect(body.person[field]).toBe('newthing');
-        });
-      }
+      describe('random', () => {
+        for(const testcase of randomCases()) {
+          emptyPersonTest(testcase.join(', '), async({expect, user, getLastPost, personTable, personCommitButton}) => {
+            const expectedFields = {};
+            for(let i = 0; i < testcase.length; i++) {
+              const field = testcase[i];
+              const fieldComponent = await findPersonTableField(field, personTable);
+              expect(fieldComponent.getAttribute('value')).toBe(''); //precondition
+              await user.type(fieldComponent, `newthing ${i}{Enter}`);
+              expectedFields[field] = `newthing ${i}`;
+            }
+            await user.click(personCommitButton);
+            const { body } = await getLastPost();
+            expect(body.person).toMatchObject(expectedFields);
+          });
+        }
+      });
+      describe('individual', () => {
+        for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+          emptyPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+            const fieldComponent = await findPersonTableField(field, personTable);
+            const base = fieldComponent.getAttribute('value');
+            expect(base).toBe(''); //precondition
+            await user.type(fieldComponent, 'newthing{Enter}');
+            await user.click(personCommitButton);
+            const { body } = await getLastPost();
+            expect(body.person[field]).toBe('newthing');
+          });
+        }
+      });
     });
   });
-  describe('clear person individually', () => {
-    for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-      fullPersonTest('full text ' + field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        expect(fieldComponent.getAttribute('value')).not.toBe(''); //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '{Enter}'); //seem to need this to pick up the change
-        await user.click(personCommitButton);
-
-        const { body } = await getLastPost();
-        expect(body.person[field]).toEqual('');
+  describe('clear', () => {
+    describe('update', () => {
+      describe('random', () => {
+        for(const testcase of randomCases()) {
+          fullPersonTest(testcase.join(', '), async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+            const expectedFields = {};
+            for(const field of testcase) {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              expect(fieldComponent.getAttribute('value')).not.toBe(''); //precondition
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}');
+            }
+            await user.click(personCommitButton);
+            const { body } = await getLastPost();
+            expect(body.person).toMatchObject(expectedFields);
+          });
+        }
       });
-      emptyPersonTest('empty text ' + field, async ({expect, user, postSpy, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
-        expect(fieldComponent.getAttribute('value')).toBe(''); //precondition -- we are testing that we cannot post if we change the record to be the same as it was before
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '{Enter}');
-        await expectUnpressable(expect, user, personCommitButton);
+      describe('individual', () => {
+        describe('text', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              expect(fieldComponent.getAttribute('value')).not.toBe(''); //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}'); //seem to need this to pick up the change
+              await user.click(personCommitButton);
 
-        await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+              const { body } = await getLastPost();
+              expect(body.person[field]).toEqual('');
+            });
+          }
+        });
+        describe('numeric', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+
+              //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
+              expect(fieldComponent.getAttribute('value')).not.toBe('');
+              expect(fieldComponent.getAttribute('value')).not.toBe('0');
+              expect(fieldComponent.getAttribute('value')).not.toBe(0);
+
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}'); //seem to need this to pick up the change
+              await user.click(personCommitButton);
+
+              const { body } = await getLastPost();
+              expect(body.person[field]).toBe(0);
+            });
+          }
+        });
       });
-    }
-    for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
-      fullPersonTest('full numeric ' + field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
+    });
+    describe('insert', () => {
+      describe('random', () => {
+        for(const testcase of randomCases()) {
+          emptyPersonTest(testcase.join(', '), async ({expect, user, postSpy, personTable, personCommitButton}) => {
+            for(const field of testcase) {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              expect(fieldComponent.getAttribute('value')).toBe(''); //precondition -- we are testing that we cannot post if we change the record to be the same as it was before
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}');
+            }
+            await expectUnpressable(expect, user, personCommitButton);
 
-        //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
-        expect(fieldComponent.getAttribute('value')).not.toBe('');
-        expect(fieldComponent.getAttribute('value')).not.toBe('0');
-        expect(fieldComponent.getAttribute('value')).not.toBe(0);
-
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '{Enter}'); //seem to need this to pick up the change
-        await user.click(personCommitButton);
-
-        const { body } = await getLastPost();
-        expect(body.person[field]).toBe(0);
+            await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+          });
+        }
       });
-      emptyPersonTest('empty numeric ' + field, async ({expect, user, postSpy, personTable, personCommitButton}) => {
-        const fieldComponent = await findPersonTableField(field, personTable);
+      describe('individual', () => {
+        describe('text', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            emptyPersonTest(field, async ({expect, user, postSpy, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              expect(fieldComponent.getAttribute('value')).toBe(''); //precondition -- we are testing that we cannot post if we change the record to be the same as it was before
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}');
+              await expectUnpressable(expect, user, personCommitButton);
 
-        //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
-        expect(fieldComponent.getAttribute('value')).toBe('0'); //seems that whatever we read from this field will be stringified, so check the type as well. That we actually end up posting a numeric 0 in such cases should be tested elsewhere
-        expect(fieldComponent.getAttribute('type')).toBe('number');
+              await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+            });
+          }
+        });
+        describe('numeric', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            emptyPersonTest(field, async ({expect, user, postSpy, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
 
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '{Enter}');
-        await expectUnpressable(expect, user, personCommitButton);
-        await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+              //precondition -- we are clearing the field, so to be able to submit it to test API POST, it must not be empty
+              expect(fieldComponent.getAttribute('value')).toBe('0'); //seems that whatever we read from this field will be stringified, so check the type as well. That we actually end up posting a numeric 0 in such cases should be tested elsewhere
+              expect(fieldComponent.getAttribute('type')).toBe('number');
 
-        //test with the explicit 0 too
-        await user.clear(fieldComponent);
-        await user.type(fieldComponent, '0{Enter}');
-        await expectUnpressable(expect, user, personCommitButton);
-        await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '{Enter}');
+              await expectUnpressable(expect, user, personCommitButton);
+              await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+
+              //test with the explicit 0 too
+              await user.clear(fieldComponent);
+              await user.type(fieldComponent, '0{Enter}');
+              await expectUnpressable(expect, user, personCommitButton);
+              await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+            });
+          }
+        });
       });
-    }
+    });
   });
   describe('toggles', () => {
     fullPersonTest('not ww1 true to false', async ({expect, user, getLastPost, notWW1, personCommitButton}) => { //baselines to true
