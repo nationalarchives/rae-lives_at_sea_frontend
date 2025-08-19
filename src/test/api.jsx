@@ -6,7 +6,7 @@ import { cleanup } from '@testing-library/react';
 import Person from '@/person.jsx';
 import { describe, test as baseTest, vi } from 'vitest';
 import { dump } from './config/testutils';
-import { random, range, isEqual } from 'lodash';
+import { union, intersection, difference, random, range, isEqual } from 'lodash';
 
 //Following tricks https://stackoverflow.com/a/72289488, http://pawelgoscicki.com/archives/2022/05/testing-usenavigate-navigate-from-react-router-v6/, https://mayashavin.com/articles/two-shades-of-mocking-vitest to spy on useParams
 import * as router from 'react-router';
@@ -185,6 +185,39 @@ const EDITABLE_PERSON_NUMERIC_FIELDS = [
   'dischargemonth',
   'dischargeyear',
 ];
+
+const PERSON_TOGGLES = [
+  'notww1',
+  'error',
+];
+
+const EDITABLE_PERSON_FIELDS = [
+  ...EDITABLE_PERSON_TEXT_FIELDS,
+  ...EDITABLE_PERSON_NUMERIC_FIELDS,
+];
+
+{ //make sure I've set up my data right
+  const comparison = ['nameId', 'person_role', ...EDITABLE_PERSON_TEXT_FIELDS, ...EDITABLE_PERSON_NUMERIC_FIELDS, ...PERSON_TOGGLES];
+  const d1 = difference(PERSON_FIELDS, comparison);
+  const d2 = difference(comparison, PERSON_FIELDS);
+  if(d1.length) {
+    console.error(`The following field(s) in PERSON_FIELDS are missing from partial(s):\n${d1}`);
+  }
+  if(d1.length && d2.length) console.error();
+  if(d2.length) {
+    console.error(`The following field(s) in partial(s) are missing from PERSON_FIELDS:\n${d2}`);
+  }
+  if(d1.length || d2.length) console.error();
+  const u = union(
+    intersection(EDITABLE_PERSON_TEXT_FIELDS, EDITABLE_PERSON_NUMERIC_FIELDS),
+    intersection(EDITABLE_PERSON_TEXT_FIELDS, PERSON_TOGGLES),
+    intersection(EDITABLE_PERSON_NUMERIC_FIELDS, PERSON_TOGGLES),
+  );
+  if(u.length) {
+    console.error(`The following field(s) appear in at least two of the partials:\n${u}`);
+  }
+  if(d1.length || d2.length || u.length) throw new Error('Mistake in data setup');
+};
 
 const SERVICE_FIELDS = [
   'rowid',
