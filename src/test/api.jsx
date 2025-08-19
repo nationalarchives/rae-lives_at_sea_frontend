@@ -186,18 +186,18 @@ const EDITABLE_PERSON_NUMERIC_FIELDS = [
   'dischargeyear',
 ];
 
-const PERSON_TOGGLES = [
+const EDITABLE_PERSON_TOGGLES = [
   'notww1',
-  'error',
 ];
 
 const EDITABLE_PERSON_FIELDS = [
   ...EDITABLE_PERSON_TEXT_FIELDS,
   ...EDITABLE_PERSON_NUMERIC_FIELDS,
+  ...EDITABLE_PERSON_TOGGLES,
 ];
 
 { //make sure I've set up my data right
-  const comparison = ['nameId', 'person_role', ...EDITABLE_PERSON_TEXT_FIELDS, ...EDITABLE_PERSON_NUMERIC_FIELDS, ...PERSON_TOGGLES];
+  const comparison = ['nameId', 'person_role', 'error', ...EDITABLE_PERSON_TEXT_FIELDS, ...EDITABLE_PERSON_NUMERIC_FIELDS, ...EDITABLE_PERSON_TOGGLES];
   const d1 = difference(PERSON_FIELDS, comparison);
   const d2 = difference(comparison, PERSON_FIELDS);
   if(d1.length) {
@@ -210,8 +210,8 @@ const EDITABLE_PERSON_FIELDS = [
   if(d1.length || d2.length) console.error();
   const u = union(
     intersection(EDITABLE_PERSON_TEXT_FIELDS, EDITABLE_PERSON_NUMERIC_FIELDS),
-    intersection(EDITABLE_PERSON_TEXT_FIELDS, PERSON_TOGGLES),
-    intersection(EDITABLE_PERSON_NUMERIC_FIELDS, PERSON_TOGGLES),
+    intersection(EDITABLE_PERSON_TEXT_FIELDS, EDITABLE_PERSON_TOGGLES),
+    intersection(EDITABLE_PERSON_NUMERIC_FIELDS, EDITABLE_PERSON_TOGGLES),
   );
   if(u.length) {
     console.error(`The following field(s) appear in at least two of the partials:\n${u}`);
@@ -261,13 +261,57 @@ function findPersonTableField(fieldId, personTable) {
   return within(personTable).findByTestId(fieldId).then((x)=>x.querySelector('input'));
 }
 
+function randomString() {
+  let result = '';
+  for(let i = random(4, 12); i >= 0; i--) {
+    result += String.fromCharCode(random(32, 126));
+  }
+  return result;
+}
+
+//for use when we do not know exactly what we are getting, due to randomness above
+//'acquire' because terms like 'get' and 'find' have meaning in this testing framework
+//returns boolean values as booleans for convenience in tests that need to say "flip state"
+async function acquireFieldComponent(field, type, personTable, notWW1) {
+  if(type === 'boolean') { //the boolean components are not in the personTable
+    const fieldComponent = function() {
+      if(field === 'notww1')     return notWW1;
+      else                       throw new Error(`Unknown boolean field ${field}`);
+    }();
+    const value = function() {
+      const v = fieldComponent.getAttribute('data-value');
+      if(v === 'true')       return true;
+      else if(v === 'false') return false;
+      else                   throw new Error(`Boolean field ${field} has non-boolean value ${v}`);
+    }();
+    return [ fieldComponent, value ];
+  }
+  else {
+    const fieldComponent = await findPersonTableField(field, personTable);
+    return [fieldComponent, fieldComponent.getAttribute('value')];
+  }
+}
+
+//escape characters that are special for user.type input
+function inputEscaper(input) {
+  if(typeof(input) === 'string') {
+    //just escape the opens
+    //closes must only be escaped if there is a real open, and there will never be a real open, because we escape the here
+    return input.replaceAll(/[\{\[]/g, '$&$&');
+  }
+  else { //e.g. a number
+    return input;
+  }
+}
+
 function randomCases() {
   const testcases = [];
   for(let i = 0; i < N_MULTITESTS; i++) { //just loop this many times
-    const TOTAL_FIELDS = EDITABLE_PERSON_TEXT_FIELDS.length;
+    const TOTAL_FIELDS = EDITABLE_PERSON_FIELDS.length;
 
-    //we test minimum 2 fields, if that's more than are in the array then we will have a problem
-    if(2 >= TOTAL_FIELDS) { throw new Error(); }
+    //we test minimum 2 non-toggle fields, if that's more than are in the array then we will have a problem
+    //toggle fields are kind of special cases, so we always want to test at least a couple of the others
+    if(EDITABLE_PERSON_TOGGLES.length + 2 >= TOTAL_FIELDS) { throw new Error(); }
 
     //randomly select n_fields fields to include in the test case
     //all fields must be different
@@ -305,9 +349,44 @@ function randomCases() {
   }
   const expandedTestcases = [];
   for(const testcase of testcases) {
-    expandedTestcases.push(testcase.map((x) => EDITABLE_PERSON_TEXT_FIELDS[x]));
+    const expandedTestcase = [];
+    for(const field of testcase) {
+      const name = EDITABLE_PERSON_FIELDS[field];
+      const type = function() {
+        if     (EDITABLE_PERSON_TEXT_FIELDS.includes(name))    return 'text';
+        else if(EDITABLE_PERSON_NUMERIC_FIELDS.includes(name)) return 'number';
+        else if(EDITABLE_PERSON_TOGGLES.includes(name))        return 'boolean';
+        else throw new Error(`Field ${name} not listed in any partial, cannot determine type.`);
+      }();
+      const data = function() {
+        if(type === 'text')         return randomString();
+        else if(type === 'number')  return random(0, 12);
+        else if(type === 'boolean') return null;
+      }();
+      expandedTestcase.push({
+        field: name,
+        type: type,
+        input:  type === 'boolean' ? null : inputEscaper(data),
+        output: type === 'boolean' ? null : data,
+      });
+    }
+    expandedTestcases.push(expandedTestcase);
   }
   return expandedTestcases;
+}
+
+function testcaseString(testcase) {
+  return testcase.map((x)=>`${x.field} (${x.input})`).join(', ');
+}
+
+function fieldExpectation(type, data) {
+  if(type === 'text') return ('' + data).trim();
+  else if(type === 'number') {
+    if(!data.match(/^\d+$/)) throw new Error(`Numeric data ${data} not a positive integer`);
+    return Number(data);
+  }
+  else if(type === 'boolean') throw new Error('fieldExpectation cannot tell you your prior state');
+  else throw new Error(`Unknown type ${type}`);
 }
 
 const it = baseTest.extend(FIXTURES.dataTest());
@@ -483,15 +562,20 @@ describe('data flow', () => {
     describe('update', () => {
       describe('random', () => {
         for(const testcase of randomCases()) {
-          fullPersonTest(testcase.join(', '), async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+          fullPersonTest(testcaseString(testcase), async ({expect, user, getLastPost, personTable, notWW1, personCommitButton}) => {
             const expectedFields = {};
-            for(let i = 0; i < testcase.length; i++) {
-              const field = testcase[i];
-              const fieldComponent = await findPersonTableField(field, personTable);
-              const base = fieldComponent.getAttribute('value');
-              expect(base).not.toBe(''); //precondition
-              await user.type(fieldComponent, `newthing foo${i}bar{Enter}`);
-              expectedFields[field] =  base + `newthing foo${i}bar`;
+            for(const { field, type, input, output } of testcase) {
+              const [ fieldComponent, base ] = await acquireFieldComponent(field, type, personTable, notWW1);
+
+              if(type === 'boolean') {
+                await user.click(fieldComponent);
+                expectedFields[field] = !base;
+              }
+              else {
+                expect(base).not.toBe(type === 'text' ? '' : '0'); //precondition
+                await user.type(fieldComponent, `${input}{Enter}`);
+                expectedFields[field] = fieldExpectation(type, base + output);
+              }
             }
             await user.click(personCommitButton);
             const { body } = await getLastPost();
@@ -516,14 +600,19 @@ describe('data flow', () => {
     describe('insert', () => {
       describe('random', () => {
         for(const testcase of randomCases()) {
-          emptyPersonTest(testcase.join(', '), async({expect, user, getLastPost, personTable, personCommitButton}) => {
+          emptyPersonTest(testcaseString(testcase), async({expect, user, getLastPost, personTable, notWW1, personCommitButton}) => {
             const expectedFields = {};
-            for(let i = 0; i < testcase.length; i++) {
-              const field = testcase[i];
-              const fieldComponent = await findPersonTableField(field, personTable);
-              expect(fieldComponent.getAttribute('value')).toBe(''); //precondition
-              await user.type(fieldComponent, `newthing ${i}{Enter}`);
-              expectedFields[field] = `newthing ${i}`;
+            for(const { field, type, input, output } of testcase) {
+              const [ fieldComponent, base ] = await acquireFieldComponent(field, type, personTable, notWW1);
+              if(type === 'boolean') {
+                await user.click(fieldComponent);
+                expectedFields[field] = !base;
+              }
+              else {
+                expect(base).toBe(type === 'text' ? '' : '0'); //precondition
+                await user.type(fieldComponent, `${input}{Enter}`);
+                expectedFields[field] = fieldExpectation(type, base + output);
+              }
             }
             await user.click(personCommitButton);
             const { body } = await getLastPost();
@@ -550,13 +639,21 @@ describe('data flow', () => {
     describe('update', () => {
       describe('random', () => {
         for(const testcase of randomCases()) {
-          fullPersonTest(testcase.join(', '), async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+          fullPersonTest(testcaseString(testcase), async ({expect, user, getLastPost, personTable, notWW1, personCommitButton}) => {
             const expectedFields = {};
-            for(const field of testcase) {
-              const fieldComponent = await findPersonTableField(field, personTable);
-              expect(fieldComponent.getAttribute('value')).not.toBe(''); //precondition
-              await user.clear(fieldComponent);
-              await user.type(fieldComponent, '{Enter}');
+            for(const { field, type } of testcase) {
+              const [ fieldComponent, base ] = await acquireFieldComponent(field, type, personTable, notWW1);
+
+              if(type === 'boolean') { //not entirely clear what "clear" means for a boolean, but let's say "ensure false"
+                if(base) await user.click(fieldComponent);
+                expectedFields[field] = false;
+              }
+              else {
+                expect(fieldComponent.getAttribute('value')).not.toBe(type === 'text' ? '' : '0'); //precondition
+                await user.clear(fieldComponent);
+                await user.type(fieldComponent, '{Enter}');
+                expectedFields[field] = type === 'text' ? '' : 0;
+              }
             }
             await user.click(personCommitButton);
             const { body } = await getLastPost();
@@ -603,15 +700,22 @@ describe('data flow', () => {
     describe('insert', () => {
       describe('random', () => {
         for(const testcase of randomCases()) {
-          emptyPersonTest(testcase.join(', '), async ({expect, user, postSpy, personTable, personCommitButton}) => {
-            for(const field of testcase) {
-              const fieldComponent = await findPersonTableField(field, personTable);
-              expect(fieldComponent.getAttribute('value')).toBe(''); //precondition -- we are testing that we cannot post if we change the record to be the same as it was before
-              await user.clear(fieldComponent);
-              await user.type(fieldComponent, '{Enter}');
+          emptyPersonTest(testcaseString(testcase), async ({expect, user, postSpy, personTable, notWW1, personCommitButton}) => {
+            const expectedFields = {};
+            for(const {field, type} of testcase) {
+              const [ fieldComponent, base ] = await acquireFieldComponent(field, type, personTable, notWW1);
+
+              if(type === 'boolean') { //not clear what 'clear' means for a boolean, but in the context of this test we just have to maintain the state
+                expectedFields[field] = base;
+              }
+              else {
+                expect(fieldComponent.getAttribute('value')).toBe(type === 'text' ? '' : '0');  //precondition -- we are testing that we cannot post if we change the record to be the same as it was before
+                await user.clear(fieldComponent);
+                await user.type(fieldComponent, '{Enter}');
+                expectedFields[field] = type === 'text' ? '' : 0;
+              }
             }
             await expectUnpressable(expect, user, personCommitButton);
-
             await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
           });
         }
