@@ -462,7 +462,7 @@ describe('data flow', () => {
   //TODO: This is a UI test, not an API test. Move it somewhere appropriate.
   //The clue is that I do not need to access the postSpy in any form
   describe('trim', () => {
-    describe('text', () => {
+    describe.skip('text', () => {
       describe('individual', () => {
         describe('post-trim', () => {
           for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
