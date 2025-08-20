@@ -21,7 +21,7 @@ export const handlers = [
         const personid = search_params.getAll('personid').at(-1);
         if(personid.match(/^\d+$/)) {
           if(PERSON_MAP.has(Number(personid))) {
-            return PERSON_MAP.get(Number(personid));
+            return HttpResponse.json(PERSON_MAP.get(Number(personid)));
           }
           else {
             const fnam = 'src/test/data/responses/person_personid_' + personid + '.json';
@@ -40,7 +40,7 @@ export const handlers = [
   http.post(import.meta.env.VITE_API_ROOT + 'person', async ({request}) => {
     const data = await request.json();
     PERSON_MAP.set(data.person.person_id, data);
-    return HttpResponse.json({message: 'Hello, Lambda'}); //TODO: Silences an error when I return this value as text, like the lambda does -- should fix the error!
+    return HttpResponse.text('Hello, Lambda');
   }),
   http.get(import.meta.env.VITE_API_ROOT + 'status/piece_summary', ({request}) => {
     const search_params = new URL(request.url).searchParams;
