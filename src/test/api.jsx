@@ -459,10 +459,8 @@ describe('data flow', () => {
     });
   });
 
-  //TODO: This is a UI test, not an API test. Move it somewhere appropriate.
-  //The clue is that I do not need to access the postSpy in any form
   describe('trim', () => {
-    describe.skip('text', () => {
+    describe('text', () => {
       describe('individual', () => {
         describe('post-trim', () => {
           for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
@@ -470,10 +468,12 @@ describe('data flow', () => {
               const fieldComponent = await findPersonTableField(field, personTable);
               const baseText = fieldComponent.getAttribute('value');
 
-              await user.clear(fieldComponent);
-              await user.type(fieldComponent, baseText + '  {Enter}');
-              expect(fieldComponent.getAttribute('value')).toBe(baseText);
-              await expectUnpressable(expect, user, personCommitButton);
+              await user.type(fieldComponent, '  {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe(baseText + '  ');
+              await expectUnpressable(expect, user, personCommitButton); //button should be unavailable as nothing has meaningfully changed
+              await user.type(fieldComponent, 'A  {Enter}'); //text has now changed in a non-trimmable way, but still has something to trim
+              await user.click(personCommitButton);
+              expect(fieldComponent.getAttribute('value')).toBe(baseText + '  A');
             });
           }
         });
@@ -484,9 +484,12 @@ describe('data flow', () => {
               const baseText = fieldComponent.getAttribute('value');
 
               await user.clear(fieldComponent);
-              await user.type(fieldComponent, ' ' + baseText + '{Enter}');
-              expect(fieldComponent.getAttribute('value')).toBe(baseText);
+              await user.type(fieldComponent, '  ' + baseText + '{Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe('  ' + baseText);
               await expectUnpressable(expect, user, personCommitButton);
+              await user.type(fieldComponent, 'B{Enter}');
+              await user.click(personCommitButton);
+              expect(fieldComponent.getAttribute('value')).toBe(baseText + 'B');
             });
           }
         });
@@ -497,9 +500,12 @@ describe('data flow', () => {
               const baseText = fieldComponent.getAttribute('value');
               expect(baseText).toBe('');
 
-              await user.type(fieldComponent, '    ' + baseText + '{Enter}');
-              expect(fieldComponent.getAttribute('value')).toBe(baseText);
+              await user.type(fieldComponent, '    {Enter}');
+              expect(fieldComponent.getAttribute('value')).toBe('    ');
               await expectUnpressable(expect, user, personCommitButton);
+              await user.type(fieldComponent, 'C    {Enter}');
+              await user.click(personCommitButton);
+              expect(fieldComponent.getAttribute('value')).toBe('C');
             });
           }
         });
