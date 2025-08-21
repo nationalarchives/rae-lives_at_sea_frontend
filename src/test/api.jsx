@@ -646,7 +646,7 @@ describe('data flow', () => {
               else {
                 expect(base).toBe(type === 'text' ? '' : '0'); //precondition
                 await user.type(fieldComponent, `${input}{Enter}`);
-                expectedFields[field] = fieldExpectation(type, base + output);
+                expectedFields[field] = fieldExpectation(type, '' + output); //fieldExpectation needs its input to be a string
               }
             }
             await user.click(personCommitButton);
