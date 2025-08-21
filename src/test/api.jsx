@@ -414,7 +414,8 @@ const it = baseTest.extend(FIXTURES.dataTest());
 const fullPersonTest        = baseTest.extend(FIXTURES.dataTest(9999999901));
 const emptyPersonTest       = baseTest.extend(FIXTURES.dataTest(9999999902));
 const emptyServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999905)); //services present but no rows and in incomplete state
-const reconciledServiceTest = baseTest.extend(FIXTURES.dataTest(9999999904)); //services reconciled into a single table
+const completeServiceTest   = baseTest.extend(FIXTURES.dataTest(9999999903)); //still no rows, but both tables are flagged complete
+const reconciledServiceTest = baseTest.extend(FIXTURES.dataTest(9999999904)); //services reconciled into a single table (but no rows)
 //TODO: Add tests for pressing both types of button (services and person)
 describe('person', () => {
   describe('commit url', () => {
@@ -941,6 +942,19 @@ describe('services', () => {
         user.click(servicesCommitButton);
         await getLastPost(); //includes check that there has been a single POST
       });
+    });
+  });
+  describe('xcheck', () => { //we already know from above tests that xcheck can only be set if both complete flags are set
+                             //this is actually a UI test, but it is a constraint on data flow, so not completely nuts to have it here
+                             //TODO: Setting this _should_ result in sending a single unified table back?
+    completeServiceTest('xcheck locks complete', async ({expect, user, xCheck, serviceTable0, serviceTable1})=> {
+      //establish preconditions
+      await user.click(xCheck);
+      expect(getDV(xCheck)).toBe('true');
+
+      const cb = getCheckboxes([serviceTable0, serviceTable1]);
+      await expectUnpressable(expect, user, cb[0]);
+      await expectUnpressable(expect, user, cb[1]);
     });
   });
 });
