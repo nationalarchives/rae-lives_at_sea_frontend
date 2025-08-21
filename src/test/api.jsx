@@ -1006,15 +1006,65 @@ describe('services', () => {
       await expectUnpressable(expect, user, cb[1]);
     });
   });
-  describe('tables', () => { //confirm that mismatched tables prevent submission
-    describe('left', () => { //modifying the left-hand table
-      completeServiceTest('blank', async ({expect, user, xCheck, serviceTable0, servicesCommitButton}) => {
-        await user.click(xCheck); //so that we have changed state, which should permit the button to be pressed
+  describe('tables', () => { //confirm that mismatched tables prevent submission and clear/block the xCheck
+    for(const side of ['left', 'right']) {
+      describe(side, () => { //modifying the <side>-hand table
+        completeServiceTest('blank', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+          await user.click(xCheck); //this state change would permit commit, but is about to get undone
+          expect(getDV(xCheck)).toBe('true');
 
-        await addEmptyRow(user, serviceTable0);
-        await expectUnpressable(expect, user, servicesCommitButton);
+          await addEmptyRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          expect(getDV(xCheck)).toBe('false');
+          await expectUnpressable(expect, user, xCheck);
+          await expectUnpressable(expect, user, servicesCommitButton);
+        });
+        completeServiceTest('partial', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+          await user.click(xCheck); //this state change would permit commit, but is about to get undone
+          expect(getDV(xCheck)).toBe('true');
+
+          await addPartialRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          expect(getDV(xCheck)).toBe('false');
+          await expectUnpressable(expect, user, xCheck);
+          await expectUnpressable(expect, user, servicesCommitButton);
+        });
+        completeServiceTest('full', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+          await user.click(xCheck); //this state change would permit commit, but is about to get undone
+          expect(getDV(xCheck)).toBe('true');
+
+          await addFullRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          expect(getDV(xCheck)).toBe('false');
+          await expectUnpressable(expect, user, xCheck);
+          await expectUnpressable(expect, user, servicesCommitButton);
+        });
+        describe('different', () => { //different row *content*, but same row count
+          completeServiceTest('partial', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+            const fieldId = randomCellIdentifier();
+            await addPartialRowBoth(user, serviceTable0, { [fieldId]: null }); //...Both functions require table 0
+
+            await user.click(xCheck);
+            expect(getDV(xCheck)).toBe('true');
+
+            const field = getServiceCells(getRow(side === 'left' ?  serviceTable0 : serviceTable1, 0))[fieldId];
+            await user.type(field, '0{Enter}');
+
+            expect(getDV(xCheck)).toBe('false');
+            await expectUnpressable(expect, user, xCheck);
+            await expectUnpressable(expect, user, servicesCommitButton);
+          });
+          completeServiceTest('full', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+            await addFullRowBoth(user, serviceTable0); //...Both functions require table 0
+            await user.click(xCheck);
+            expect(getDV(xCheck)).toBe('true');
+            const field = getServiceCells(getRow(side === 'left' ?  serviceTable0 : serviceTable1, 0))[randomCellIdentifier()];
+            await user.type(field, '0{Enter}');
+
+            expect(getDV(xCheck)).toBe('false');
+            await expectUnpressable(expect, user, xCheck);
+            await expectUnpressable(expect, user, servicesCommitButton);
+          });
+        });
       });
-    });
+    }
   });
 });
 
