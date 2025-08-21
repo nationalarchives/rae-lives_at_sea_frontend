@@ -246,11 +246,13 @@ function getRow(table, index) {
 function getCheckboxes(tables) {
   const checkboxes = [];
   for(const table of tables) {
-    const component = within(table).getByTestId('completeCheckbox');
-    const state = component.getAttribute('data-value');
-    checkboxes.push({component: component, state: state});
+    checkboxes.push(within(table).getByTestId('completeCheckbox'));
   };
   return checkboxes;
+}
+
+function getDV(component) {
+  return component.getAttribute('data-value');
 }
 
 function expectUnpressable(expect, user, button) {
@@ -445,8 +447,8 @@ describe('data flow', () => {
       //this part more checking the preconditions that part of the test
       //i.e. do I need to press the 'complete' checkboxes in order to submit?
       const cb = getCheckboxes([serviceTable0, serviceTable1]);
-      expect(cb[0].state).toBe('true');
-      expect(cb[1].state).toBe('true');
+      expect(getDV(cb[0])).toBe('true');
+      expect(getDV(cb[1])).toBe('true');
 
       const fields = getServiceCells(getRow(serviceTable0, 0));
       await user.type(fields.ship, 'Indus{Enter}');
