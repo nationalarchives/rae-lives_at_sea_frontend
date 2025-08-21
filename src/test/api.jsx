@@ -405,8 +405,11 @@ function fieldExpectation(type, data) {
 }
 
 const it = baseTest.extend(FIXTURES.dataTest());
-const fullPersonTest  = baseTest.extend(FIXTURES.dataTest(9999999901));
-const emptyPersonTest = baseTest.extend(FIXTURES.dataTest(9999999902));
+const fullPersonTest        = baseTest.extend(FIXTURES.dataTest(9999999901));
+const emptyPersonTest       = baseTest.extend(FIXTURES.dataTest(9999999902));
+const emptyServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999905)); //services present but no rows and in incomplete state
+const reconciledServiceTest = baseTest.extend(FIXTURES.dataTest(9999999904)); //services reconciled into a single table
+//TODO: Add tests for pressing both types of button (services and person)
 describe('person', () => {
   describe('commit url', () => {
     fullPersonTest('person', async({expect, user, getLastPost, birthYear, personCommitButton}) => {
@@ -877,7 +880,59 @@ describe('services', () => {
       expect(url).toMatch(/\/person$/);
     });
   });
+  describe('states', () => {
+    describe('complete', () => {
+      emptyServiceTest('neither', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+        const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
+        //just to ensure that the button is not disabled due to no state change
+        await addBasicRow(user, serviceTable0, serviceTable1);
+
+        //preconditions
+        expect(getDV(cb[0])).toBe('false');
+        expect(getDV(cb[1])).toBe('false');
+
+        await expectUnpressable(expect, user, servicesCommitButton);
+      });
+      emptyServiceTest('first', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+        const cb = getCheckboxes([serviceTable0, serviceTable1]);
+
+        //just to ensure that the button is not disabled due to no state change
+        await addBasicRow(user, serviceTable0, serviceTable1);
+
+        //preconditions
+        await user.click(cb[0]);
+        expect(getDV(cb[0])).toBe('true');
+        expect(getDV(cb[1])).toBe('false');
+
+        await expectUnpressable(expect, user, servicesCommitButton);
+      });
+      emptyServiceTest('second', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+        const cb = getCheckboxes([serviceTable0, serviceTable1]);
+
+        //preconditions
+        await user.click(cb[1]);
+        expect(getDV(cb[0])).toBe('false');
+        expect(getDV(cb[1])).toBe('true');
+
+        await expectUnpressable(expect, user, servicesCommitButton);
+      });
+      emptyServiceTest('both', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
+        const cb = getCheckboxes([serviceTable0, serviceTable1]);
+
+        //preconditions
+        await Promise.all([
+          user.click(cb[0]),
+          user.click(cb[1]),
+        ]);
+        expect(getDV(cb[0])).toBe('true');
+        expect(getDV(cb[1])).toBe('true');
+
+        user.click(servicesCommitButton);
+        await getLastPost(); //includes check that there has been a single POST
+      });
+    });
+  });
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
