@@ -271,11 +271,20 @@ async function addEmptyRow(user, table) {
   await user.click(within(await table).getByTestId('firstRowButton'));
 }
 
-async function addBasicRow(user, serviceTable0, serviceTable1) {
-  await addEmptyRow(user, serviceTable0);
-  const fields = getServiceCells(getRow(serviceTable0, 0));
+async function addEmptyRowBoth(user, table0) {
+  await addEmptyRow(user, table0);
+  await user.click(within(table0).getByTestId('clone0to1Button'));
+}
+
+async function addPartialRow(user, table) {
+  await addEmptyRow(user, table);
+  const fields = getServiceCells(getRow(table, 0));
   await user.type(fields.ship, 'Indus{Enter}');
-  await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
+}
+
+async function addPartialRowBoth(user, table0) {
+  await addPartialRow(user, table0);
+  await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
 async function addFullRow(user, table, content = {}) {
@@ -289,6 +298,11 @@ async function addFullRow(user, table, content = {}) {
   await user.type(fields.today,     `${content.today     || random(0, 28)        }{Enter}`);
   await user.type(fields.tomonth,   `${content.tomonth   || random(0, 12)        }{Enter}`);
   await user.type(fields.toyear,    `${content.toyear    || "18" + random(10, 99)}{Enter}`);
+}
+
+async function addFullRowBoth(user, table0, content = {}) {
+  await addFullRow(table0);
+  await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
 function expectUnpressable(expect, user, button) {
@@ -896,8 +910,8 @@ describe('services', () => {
       expect(getDV(cb[0])).toBe('true');
       expect(getDV(cb[1])).toBe('true');
 
-      //add a row so that the button will be enabled
-      await addBasicRow(user, serviceTable0, serviceTable1);
+      //add a row to each table so that the button will be enabled
+      await addPartialRowBoth(user, serviceTable0);
 
       await user.click(component.getByTestId('servicesCommitButton'));
       const {url} = await getLastPost();
@@ -910,7 +924,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
-        await addBasicRow(user, serviceTable0, serviceTable1);
+        await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
         expect(getDV(cb[0])).toBe('false');
@@ -923,7 +937,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
-        await addBasicRow(user, serviceTable0, serviceTable1);
+        await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
         await user.click(cb[0]);
