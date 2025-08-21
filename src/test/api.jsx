@@ -261,6 +261,13 @@ function getDV(component) {
   return component.getAttribute('data-value');
 }
 
+async function addBasicRow(user, serviceTable0, serviceTable1) {
+  await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
+  const fields = getServiceCells(getRow(serviceTable0, 0));
+  await user.type(fields.ship, 'Indus{Enter}');
+  await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
+}
+
 function expectUnpressable(expect, user, button) {
   return expect(user.click(button)).rejects.toThrow('Unable to perform pointer interaction as the element has `pointer-events: none`');
 }
@@ -447,19 +454,14 @@ describe('data flow', () => {
     });
     //TODO: Multi-click tests for services. A multi-click test for services + person data (maybe the most interesting case)
     it('services', async({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-      //all this just to enable the button
-      await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
+      //just to enable the button
+      await addBasicRow(user, serviceTable0, serviceTable1);
 
       //this part more checking the preconditions that part of the test
       //i.e. do I need to press the 'complete' checkboxes in order to submit?
       const cb = getCheckboxes([serviceTable0, serviceTable1]);
       expect(getDV(cb[0])).toBe('true');
       expect(getDV(cb[1])).toBe('true');
-
-      const fields = getServiceCells(getRow(serviceTable0, 0));
-      await user.type(fields.ship, 'Indus{Enter}');
-      await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
-      //now ready to press the button!
 
       await user.click(servicesCommitButton);
       const {url} = await getLastPost();
