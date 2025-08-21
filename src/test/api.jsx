@@ -590,17 +590,46 @@ describe('data flow', () => {
         }
       });
       describe('individual', () => {
-        for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-          fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-            const fieldComponent = await findPersonTableField(field, personTable);
-            const base = fieldComponent.getAttribute('value');
-            expect(base).not.toBe(''); //precondition
-            await user.type(fieldComponent, 'newthing{Enter}');
-            await user.click(personCommitButton);
-            const { body } = await getLastPost();
-            expect(body.person[field]).toBe(base + 'newthing');
-          });
-        }
+        describe('text', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).not.toBe(''); //precondition
+              await user.type(fieldComponent, 'newthing{Enter}');
+              await user.click(personCommitButton);
+              const { body } = await getLastPost();
+              expect(body.person[field]).toBe(base + 'newthing');
+            });
+          }
+        });
+        describe('numeric', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            fullPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+
+              //precondition
+              expect(base).not.toBe('');
+              expect(base).not.toBe('0');
+              expect(base).not.toBe(0);
+
+              await user.type(fieldComponent, '123{Tab}'); //tabbing changes the selection
+                                                           //for numeric fields, this is needed to cause the attribute 'value' to update
+                                                           //an alternative approach is to check fieldComponent.value rather than
+                                                           //fieldComponent.getAttribute('value')
+                                                           //because I am trying to look at what ends up getting transmitted, I think
+                                                           //the attribute ("actual" value for at least a controlled component) is what
+                                                           //I want to look at, but this may be splitting hairs
+                                                           //re https://github.com/testing-library/user-event/issues/411 and
+                                                           //   https://stackoverflow.com/a/6004028
+              expect(fieldComponent.getAttribute('value')).toBe(`${base}123`);
+              await user.click(personCommitButton);
+              const { body } = await getLastPost();
+              expect(body.person[field]).toBe(Number(`${base}123`));
+            });
+          }
+        });
       });
     });
     describe('insert', () => {
@@ -627,17 +656,44 @@ describe('data flow', () => {
         }
       });
       describe('individual', () => {
-        for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
-          emptyPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
-            const fieldComponent = await findPersonTableField(field, personTable);
-            const base = fieldComponent.getAttribute('value');
-            expect(base).toBe(''); //precondition
-            await user.type(fieldComponent, 'newthing{Enter}');
-            await user.click(personCommitButton);
-            const { body } = await getLastPost();
-            expect(body.person[field]).toBe('newthing');
-          });
-        }
+        describe('text', () => {
+          for(const field of EDITABLE_PERSON_TEXT_FIELDS) {
+            emptyPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+              expect(base).toBe(''); //precondition
+              await user.type(fieldComponent, 'newthing{Enter}');
+              await user.click(personCommitButton);
+              const { body } = await getLastPost();
+              expect(body.person[field]).toBe('newthing');
+            });
+          }
+        });
+        describe('numeric', () => {
+          for(const field of EDITABLE_PERSON_NUMERIC_FIELDS) {
+            emptyPersonTest(field, async ({expect, user, getLastPost, personTable, personCommitButton}) => {
+              const fieldComponent = await findPersonTableField(field, personTable);
+              const base = fieldComponent.getAttribute('value');
+
+              //precondition
+              expect(base).toBe('0');
+
+              await user.type(fieldComponent, '123{Tab}'); //tabbing changes the selection
+                                                           //for numeric fields, this is needed to cause the attribute 'value' to update
+                                                           //an alternative approach is to check fieldComponent.value rather than
+                                                           //fieldComponent.getAttribute('value')
+                                                           //because I am trying to look at what ends up getting transmitted, I think
+                                                           //the attribute ("actual" value for at least a controlled component) is what
+                                                           //I want to look at, but this may be splitting hairs
+                                                           //re https://github.com/testing-library/user-event/issues/411 and
+                                                           //   https://stackoverflow.com/a/6004028
+              expect(fieldComponent.getAttribute('value')).toBe('123'); //0-prefix should disappear
+              await user.click(personCommitButton);
+              const { body } = await getLastPost();
+              expect(body.person[field]).toBe(123);
+            });
+          }
+        });
       });
     });
   });
