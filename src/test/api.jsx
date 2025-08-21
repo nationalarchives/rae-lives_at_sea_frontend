@@ -267,15 +267,19 @@ function getDV(component) {
   return component.getAttribute('data-value');
 }
 
+async function addEmptyRow(user, table) {
+  await user.click(within(await table).getByTestId('firstRowButton'));
+}
+
 async function addBasicRow(user, serviceTable0, serviceTable1) {
-  await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
+  await addEmptyRow(user, serviceTable0);
   const fields = getServiceCells(getRow(serviceTable0, 0));
   await user.type(fields.ship, 'Indus{Enter}');
   await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
 }
 
 async function addFullRow(user, table, content = {}) {
-  await user.click(within(await table).getByTestId('firstRowButton'));
+  await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
   await user.type(fields.ship,      `${content.ship      || randomString()       }{Enter}`);
   await user.type(fields.rating,    `${content.rating    || randomString()       }{Enter}`);
