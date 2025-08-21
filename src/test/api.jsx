@@ -911,6 +911,7 @@ describe('services', () => {
       expect(getDV(cb[1])).toBe('true');
 
       //add a row to each table so that the button will be enabled
+      //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
       await addPartialRowBoth(user, serviceTable0);
 
       await user.click(component.getByTestId('servicesCommitButton'));
@@ -924,6 +925,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
+        //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
         await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
@@ -937,6 +939,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
+        //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
         await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
