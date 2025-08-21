@@ -407,7 +407,7 @@ function fieldExpectation(type, data) {
 const it = baseTest.extend(FIXTURES.dataTest());
 const fullPersonTest  = baseTest.extend(FIXTURES.dataTest(9999999901));
 const emptyPersonTest = baseTest.extend(FIXTURES.dataTest(9999999902));
-describe('data flow', () => {
+describe('person', () => {
   describe('commit url', () => {
     fullPersonTest('person', async({expect, user, getLastPost, birthYear, personCommitButton}) => {
       await user.clear(birthYear); //just to enable the button
@@ -451,21 +451,6 @@ describe('data flow', () => {
 
       //also check that the button is now disabled
       await expectUnpressable(expect, user, personCommitButton);
-    });
-    //TODO: Multi-click tests for services. A multi-click test for services + person data (maybe the most interesting case)
-    it('services', async({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-      //just to enable the button
-      await addBasicRow(user, serviceTable0, serviceTable1);
-
-      //this part more checking the preconditions that part of the test
-      //i.e. do I need to press the 'complete' checkboxes in order to submit?
-      const cb = getCheckboxes([serviceTable0, serviceTable1]);
-      expect(getDV(cb[0])).toBe('true');
-      expect(getDV(cb[1])).toBe('true');
-
-      await user.click(servicesCommitButton);
-      const {url} = await getLastPost();
-      expect(url).toMatch(/\/person$/);
     });
   });
 
@@ -872,40 +857,61 @@ describe('data flow', () => {
     });
   });
   describe.todo('catref', ()=>{}); //check the the catref matches the series and actual item number. manufacture cases where other ususal suspects (officialnumber, nameid) are different from the item number. could be that my existing test data already happens to have these properties.
+});
 
-  baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-    await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
-    const fields = getServiceCells(getRow(serviceTable0, 0));
-    await user.type(fields.ship, 'Indus{Enter}');
-    await user.type(fields.rating, 'Butch{Enter}');
-    await user.type(fields.fromday, '5{Enter}');
-    await user.type(fields.frommonth, '1{Enter}');
-    await user.type(fields.fromyear, '1869{Enter}');
-    await user.type(fields.today, '7{Enter}');
-    await user.type(fields.tomonth, '2{Enter}');
-    await user.type(fields.toyear, '1874{Enter}');
-    await user.click(within(serviceTable0).getByTestId('completeCheckbox'));
-    await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
-    await user.click(within(serviceTable1).getByTestId('completeCheckbox'));
-    await user.click(servicesCommitButton);
+describe('services', () => {
+  describe('commit url', () => {
+    //TODO: Multi-click tests for services.
+    it('services', async({expect, user, getLastPost, serviceTable0, serviceTable1, component}) => {
+      //this part more checking the preconditions that part of the test
+      //i.e. do I need to press the 'complete' checkboxes in order to submit?
+      const cb = getCheckboxes([serviceTable0, serviceTable1]);
+      expect(getDV(cb[0])).toBe('true');
+      expect(getDV(cb[1])).toBe('true');
 
-    const lastPost = await getLastPost();
-    const main = lastPost.body.service.MAIN;
-    expect(Array.isArray(main)).toBe(true);
-    expect(main.length).toBe(2);
-    for(const {rows} of main) {
-      expect(rows.length).toBe(1);
-      expect(rows[0]).toStrictEqual({
-        row_number: 1,
-        ship: 'Indus',
-        rating: 'Butch',
-        fromday: 5,
-        frommonth: 1,
-        fromyear: 1869,
-        today: 7,
-        tomonth: 2,
-        toyear: 1874,
-      });
-    }
+      //add a row so that the button will be enabled
+      await addBasicRow(user, serviceTable0, serviceTable1);
+
+      await user.click(component.getByTestId('servicesCommitButton'));
+      const {url} = await getLastPost();
+      expect(url).toMatch(/\/person$/);
+    });
   });
+
+});
+
+baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
+  await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
+  const fields = getServiceCells(getRow(serviceTable0, 0));
+  await user.type(fields.ship, 'Indus{Enter}');
+  await user.type(fields.rating, 'Butch{Enter}');
+  await user.type(fields.fromday, '5{Enter}');
+  await user.type(fields.frommonth, '1{Enter}');
+  await user.type(fields.fromyear, '1869{Enter}');
+  await user.type(fields.today, '7{Enter}');
+  await user.type(fields.tomonth, '2{Enter}');
+  await user.type(fields.toyear, '1874{Enter}');
+  await user.click(within(serviceTable0).getByTestId('completeCheckbox'));
+  await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
+  await user.click(within(serviceTable1).getByTestId('completeCheckbox'));
+  await user.click(servicesCommitButton);
+
+  const lastPost = await getLastPost();
+  const main = lastPost.body.service.MAIN;
+  expect(Array.isArray(main)).toBe(true);
+  expect(main.length).toBe(2);
+  for(const {rows} of main) {
+    expect(rows.length).toBe(1);
+    expect(rows[0]).toStrictEqual({
+      row_number: 1,
+      ship: 'Indus',
+      rating: 'Butch',
+      fromday: 5,
+      frommonth: 1,
+      fromyear: 1869,
+      today: 7,
+      tomonth: 2,
+      toyear: 1874,
+    });
+  }
 });
