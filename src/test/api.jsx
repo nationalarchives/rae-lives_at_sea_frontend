@@ -20,6 +20,7 @@ const FIXTURES = (function(){
   let birthYear = null;
   let personTable = null;
   let personCommitButton = null;
+  let servicesCommitButton = null;
   let serviceTable0 = null;
   let serviceTable1 = null;
   let notWW1 = null;
@@ -120,6 +121,11 @@ const FIXTURES = (function(){
           personCommitButton = await component.findByTestId('personCommitButton');
           await use(personCommitButton);
           personCommitButton = null;
+        },
+        servicesCommitButton: async({component}, use) => {
+          servicesCommitButton = await component.findByTestId('servicesCommitButton');
+          await use(servicesCommitButton);
+          servicesCommitButton = null;
         },
         serviceTable0: async({component}, use) => {
           serviceTable0 = await component.findByTestId('serviceTable0');
@@ -440,7 +446,7 @@ describe('data flow', () => {
       await expectUnpressable(expect, user, personCommitButton);
     });
     //TODO: Multi-click tests for services. A multi-click test for services + person data (maybe the most interesting case)
-    it('services', async({expect, user, getLastPost, serviceTable0, serviceTable1, component}) => {
+    it('services', async({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
       //all this just to enable the button
       await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
 
@@ -455,7 +461,7 @@ describe('data flow', () => {
       await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
       //now ready to press the button!
 
-      await user.click(component.getByTestId('servicesCommitButton'));
+      await user.click(servicesCommitButton);
       const {url} = await getLastPost();
       expect(url).toMatch(/\/person$/);
     });
@@ -865,7 +871,7 @@ describe('data flow', () => {
   });
   describe.todo('catref', ()=>{}); //check the the catref matches the series and actual item number. manufacture cases where other ususal suspects (officialnumber, nameid) are different from the item number. could be that my existing test data already happens to have these properties.
 
-  baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, component}) => {
+  baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
     await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
     const fields = getServiceCells(getRow(serviceTable0, 0));
     await user.type(fields.ship, 'Indus{Enter}');
@@ -879,7 +885,7 @@ describe('data flow', () => {
     await user.click(within(serviceTable0).getByTestId('completeCheckbox'));
     await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
     await user.click(within(serviceTable1).getByTestId('completeCheckbox'));
-    await user.click(component.getByTestId('servicesCommitButton'));
+    await user.click(servicesCommitButton);
 
     const lastPost = await getLastPost();
     const main = lastPost.body.service.MAIN;
