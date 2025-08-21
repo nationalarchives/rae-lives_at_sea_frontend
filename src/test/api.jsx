@@ -288,7 +288,7 @@ async function addPartialRow(user, table, content = { ship: null }) {
   await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
   for(const field in content) {
-    const c = content[field] === null ? randomCellContent(field) : content[field];
+    const c = content[field] === null ? inputEscaper(randomCellContent(field)) : content[field];
     await user.type(fields[field], `${c}{Enter}`);
   }
 }
@@ -301,14 +301,14 @@ async function addPartialRowBoth(user, table0, content = { ship: null }) {
 async function addFullRow(user, table, content = {}) {
   await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
-  await user.type(fields.ship,      `${content.ship      || randomCellContent('ship')     }{Enter}`);
-  await user.type(fields.rating,    `${content.rating    || randomCellContent('rating')   }{Enter}`);
-  await user.type(fields.fromday,   `${content.fromday   || randomCellContent('fromday')  }{Enter}`);
-  await user.type(fields.frommonth, `${content.frommonth || randomCellContent('frommonth')}{Enter}`);
-  await user.type(fields.fromyear,  `${content.fromyear  || randomCellContent('fromyear') }{Enter}`);
-  await user.type(fields.today,     `${content.today     || randomCellContent('today')    }{Enter}`);
-  await user.type(fields.tomonth,   `${content.tomonth   || randomCellContent('tomonth')  }{Enter}`);
-  await user.type(fields.toyear,    `${content.toyear    || randomCellContent('toyear')   }{Enter}`);
+  await user.type(fields.ship,      `${content.ship      || inputEscaper(randomCellContent('ship'))     }{Enter}`);
+  await user.type(fields.rating,    `${content.rating    || inputEscaper(randomCellContent('rating'))   }{Enter}`);
+  await user.type(fields.fromday,   `${content.fromday   || inputEscaper(randomCellContent('fromday'))  }{Enter}`);
+  await user.type(fields.frommonth, `${content.frommonth || inputEscaper(randomCellContent('frommonth'))}{Enter}`);
+  await user.type(fields.fromyear,  `${content.fromyear  || inputEscaper(randomCellContent('fromyear')) }{Enter}`);
+  await user.type(fields.today,     `${content.today     || inputEscaper(randomCellContent('today'))    }{Enter}`);
+  await user.type(fields.tomonth,   `${content.tomonth   || inputEscaper(randomCellContent('tomonth'))  }{Enter}`);
+  await user.type(fields.toyear,    `${content.toyear    || inputEscaper(randomCellContent('toyear'))   }{Enter}`);
 }
 
 async function addFullRowBoth(user, table0, content = {}) {
