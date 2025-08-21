@@ -298,7 +298,7 @@ async function addPartialRow(user, table, content = { [randomCellIdentifier()]: 
 }
 
 async function addPartialRowBoth(user, table0, content = { [randomCellIdentifier()]: null }) {
-  await addPartialRow(user, table0);
+  await addPartialRow(user, table0, content);
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
@@ -316,7 +316,7 @@ async function addFullRow(user, table, content = {}) {
 }
 
 async function addFullRowBoth(user, table0, content = {}) {
-  await addFullRow(table0);
+  await addFullRow(user, table0, content);
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
