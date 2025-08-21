@@ -974,6 +974,16 @@ describe('services', () => {
       await expectUnpressable(expect, user, cb[1]);
     });
   });
+  describe('tables', () => { //confirm that mismatched tables prevent submission
+    describe('left', () => { //modifying the left-hand table
+      completeServiceTest('blank', async ({expect, user, xCheck, serviceTable0, servicesCommitButton}) => {
+        await user.click(xCheck); //so that we have changed state, which should permit the button to be pressed
+
+        await addEmptyRow(user, serviceTable0);
+        await expectUnpressable(expect, user, servicesCommitButton);
+      });
+    });
+  });
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
