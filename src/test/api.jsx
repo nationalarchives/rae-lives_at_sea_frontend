@@ -274,6 +274,19 @@ async function addBasicRow(user, serviceTable0, serviceTable1) {
   await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
 }
 
+async function addFullRow(user, table, content = {}) {
+  await user.click(within(await table).getByTestId('firstRowButton'));
+  const fields = getServiceCells(getRow(table, 0));
+  await user.type(fields.ship,      `${content.ship      || randomString()       }{Enter}`);
+  await user.type(fields.rating,    `${content.rating    || randomString()       }{Enter}`);
+  await user.type(fields.fromday,   `${content.fromday   || random(0, 28)        }{Enter}`);
+  await user.type(fields.frommonth, `${content.frommonth || random(0, 12)        }{Enter}`);
+  await user.type(fields.fromyear,  `${content.fromyear  || "18" + random(10, 99)}{Enter}`);
+  await user.type(fields.today,     `${content.today     || random(0, 28)        }{Enter}`);
+  await user.type(fields.tomonth,   `${content.tomonth   || random(0, 12)        }{Enter}`);
+  await user.type(fields.toyear,    `${content.toyear    || "18" + random(10, 99)}{Enter}`);
+}
+
 function expectUnpressable(expect, user, button) {
   return expect(user.click(button)).rejects.toThrow('Unable to perform pointer interaction as the element has `pointer-events: none`');
 }
@@ -960,16 +973,16 @@ describe('services', () => {
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-  await user.click(within(await serviceTable0).getByTestId('firstRowButton'));
-  const fields = getServiceCells(getRow(serviceTable0, 0));
-  await user.type(fields.ship, 'Indus{Enter}');
-  await user.type(fields.rating, 'Butch{Enter}');
-  await user.type(fields.fromday, '5{Enter}');
-  await user.type(fields.frommonth, '1{Enter}');
-  await user.type(fields.fromyear, '1869{Enter}');
-  await user.type(fields.today, '7{Enter}');
-  await user.type(fields.tomonth, '2{Enter}');
-  await user.type(fields.toyear, '1874{Enter}');
+  await addFullRow(user, serviceTable0, {
+    ship:      'Indus',
+    rating:    'Butch',
+    fromday:   5,
+    frommonth: 1,
+    fromyear:  1869,
+    today:     7,
+    tomonth:   2,
+    toyear:    1874,
+  });
   await user.click(within(serviceTable0).getByTestId('completeCheckbox'));
   await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
   await user.click(within(serviceTable1).getByTestId('completeCheckbox'));
