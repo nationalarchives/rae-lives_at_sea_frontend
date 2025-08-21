@@ -267,6 +267,10 @@ function getDV(component) {
   return component.getAttribute('data-value');
 }
 
+function randomCellIdentifier() {
+  return ['ship', 'rating', 'fromday', 'today', 'frommonth', 'tomonth', 'fromyear', 'toyear'][random(0, 7)];
+}
+
 function randomCellContent(field) {
   if(field === 'ship'      || field === 'rating')  return randomString();
   if(field === 'fromday'   || field === 'today')   return random(0, 28);
@@ -284,7 +288,7 @@ async function addEmptyRowBoth(user, table0) {
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
-async function addPartialRow(user, table, content = { ship: null }) {
+async function addPartialRow(user, table, content = { [randomCellIdentifier()]: null }) {
   await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
   for(const field in content) {
@@ -293,7 +297,7 @@ async function addPartialRow(user, table, content = { ship: null }) {
   }
 }
 
-async function addPartialRowBoth(user, table0, content = { ship: null }) {
+async function addPartialRowBoth(user, table0, content = { [randomCellIdentifier()]: null }) {
   await addPartialRow(user, table0);
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
