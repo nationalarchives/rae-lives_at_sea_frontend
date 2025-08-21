@@ -267,6 +267,14 @@ function getDV(component) {
   return component.getAttribute('data-value');
 }
 
+function randomCellContent(field) {
+  if(field === 'ship'      || field === 'rating')  return randomString();
+  if(field === 'fromday'   || field === 'today')   return random(0, 28);
+  if(field === 'frommonth' || field === 'tomonth') return random(0, 12);
+  if(field === 'fromyear'  || field === 'toyear')  return Number('18' + random(10,99));
+  throw new Error(`Unknown field ${field}`);
+}
+
 async function addEmptyRow(user, table) {
   await user.click(within(await table).getByTestId('firstRowButton'));
 }
@@ -276,13 +284,16 @@ async function addEmptyRowBoth(user, table0) {
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
-async function addPartialRow(user, table) {
+async function addPartialRow(user, table, content = { ship: null }) {
   await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
-  await user.type(fields.ship, 'Indus{Enter}');
+  for(const field in content) {
+    const c = content[field] === null ? randomCellContent(field) : content[field];
+    await user.type(fields[field], `${c}{Enter}`);
+  }
 }
 
-async function addPartialRowBoth(user, table0) {
+async function addPartialRowBoth(user, table0, content = { ship: null }) {
   await addPartialRow(user, table0);
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
@@ -290,14 +301,14 @@ async function addPartialRowBoth(user, table0) {
 async function addFullRow(user, table, content = {}) {
   await addEmptyRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
-  await user.type(fields.ship,      `${content.ship      || randomString()       }{Enter}`);
-  await user.type(fields.rating,    `${content.rating    || randomString()       }{Enter}`);
-  await user.type(fields.fromday,   `${content.fromday   || random(0, 28)        }{Enter}`);
-  await user.type(fields.frommonth, `${content.frommonth || random(0, 12)        }{Enter}`);
-  await user.type(fields.fromyear,  `${content.fromyear  || "18" + random(10, 99)}{Enter}`);
-  await user.type(fields.today,     `${content.today     || random(0, 28)        }{Enter}`);
-  await user.type(fields.tomonth,   `${content.tomonth   || random(0, 12)        }{Enter}`);
-  await user.type(fields.toyear,    `${content.toyear    || "18" + random(10, 99)}{Enter}`);
+  await user.type(fields.ship,      `${content.ship      || randomCellContent('ship')     }{Enter}`);
+  await user.type(fields.rating,    `${content.rating    || randomCellContent('rating')   }{Enter}`);
+  await user.type(fields.fromday,   `${content.fromday   || randomCellContent('fromday')  }{Enter}`);
+  await user.type(fields.frommonth, `${content.frommonth || randomCellContent('frommonth')}{Enter}`);
+  await user.type(fields.fromyear,  `${content.fromyear  || randomCellContent('fromyear') }{Enter}`);
+  await user.type(fields.today,     `${content.today     || randomCellContent('today')    }{Enter}`);
+  await user.type(fields.tomonth,   `${content.tomonth   || randomCellContent('tomonth')  }{Enter}`);
+  await user.type(fields.toyear,    `${content.toyear    || randomCellContent('toyear')   }{Enter}`);
 }
 
 async function addFullRowBoth(user, table0, content = {}) {
