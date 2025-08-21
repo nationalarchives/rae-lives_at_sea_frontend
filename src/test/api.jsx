@@ -21,6 +21,7 @@ const FIXTURES = (function(){
   let personTable = null;
   let personCommitButton = null;
   let servicesCommitButton = null;
+  let xCheck = null;
   let serviceTable0 = null;
   let serviceTable1 = null;
   let notWW1 = null;
@@ -126,6 +127,11 @@ const FIXTURES = (function(){
           servicesCommitButton = await component.findByTestId('servicesCommitButton');
           await use(servicesCommitButton);
           servicesCommitButton = null;
+        },
+        xCheck: async({component}, use) => {
+          xCheck = await component.findByTestId('xCheck');
+          await use(xCheck);
+          xCheck = null;
         },
         serviceTable0: async({component}, use) => {
           serviceTable0 = await component.findByTestId('serviceTable0');
@@ -881,8 +887,8 @@ describe('services', () => {
     });
   });
   describe('states', () => {
-    describe('complete', () => {
-      emptyServiceTest('neither', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+    describe('complete', () => { //these tests check a couple of things -- that the xcheckbutton is unpressable unless both tables are marked complete, and that the submit button is unpressable unless both tables are marked complete
+      emptyServiceTest('neither', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
@@ -892,9 +898,10 @@ describe('services', () => {
         expect(getDV(cb[0])).toBe('false');
         expect(getDV(cb[1])).toBe('false');
 
+        await expectUnpressable(expect, user, xCheck);
         await expectUnpressable(expect, user, servicesCommitButton);
       });
-      emptyServiceTest('first', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+      emptyServiceTest('first', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
@@ -905,9 +912,10 @@ describe('services', () => {
         expect(getDV(cb[0])).toBe('true');
         expect(getDV(cb[1])).toBe('false');
 
+        await expectUnpressable(expect, user, xCheck);
         await expectUnpressable(expect, user, servicesCommitButton);
       });
-      emptyServiceTest('second', async ({expect, user, serviceTable0, serviceTable1, servicesCommitButton}) => {
+      emptyServiceTest('second', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //preconditions
@@ -915,9 +923,10 @@ describe('services', () => {
         expect(getDV(cb[0])).toBe('false');
         expect(getDV(cb[1])).toBe('true');
 
+        await expectUnpressable(expect, user, xCheck);
         await expectUnpressable(expect, user, servicesCommitButton);
       });
-      emptyServiceTest('both', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
+      emptyServiceTest('both', async ({expect, user, getLastPost, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //preconditions
@@ -928,6 +937,7 @@ describe('services', () => {
         expect(getDV(cb[0])).toBe('true');
         expect(getDV(cb[1])).toBe('true');
 
+        user.click(xCheck);
         user.click(servicesCommitButton);
         await getLastPost(); //includes check that there has been a single POST
       });
