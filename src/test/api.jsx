@@ -363,6 +363,10 @@ async function populateRow(user, row, content = {}) {
   await user.type(fields.toyear,    `${content.toyear    || inputEscaper(randomCellContent('toyear'))   }{Enter}`);
 }
 
+async function deleteRow(user, table, index) {
+  await user.click(within(getRow(table, index)).getByTestId('deleteRowButton'));
+}
+
 function expectUnpressable(expect, user, button) {
   return expect(user.click(button)).rejects.toThrow('Unable to perform pointer interaction as the element has `pointer-events: none`');
 }
@@ -1044,6 +1048,31 @@ describe('services', () => {
       const cb = getCheckboxes([serviceTable0, serviceTable1]);
       await expectUnpressable(expect, user, cb[0]);
       await expectUnpressable(expect, user, cb[1]);
+    });
+  });
+  describe('clone', () => { //check the left-to-right and right-to-left buttons
+    describe('disabled', () => {
+      emptyServiceTest('disabled on empty', async ({expect, user, serviceTable0, serviceTable1}) => {
+        const cloneButton = within(serviceTable0).getByTestId('clone0to1Button');
+        await expectUnpressable(expect, user, cloneButton);
+
+        //check that it is also unpressable after we return to empty from a non-empty state
+        await addFirstRow(user, serviceTable0);
+        await deleteRow(user, serviceTable0, 0);
+        await expectUnpressable(expect, user, cloneButton);
+      });
+      emptyServiceTest('disabled on identical', async ({expect, user, serviceTable0, serviceTable1}) => {
+        const cloneButton = within(serviceTable0).getByTestId('clone0to1Button');
+        await addFirstRowBoth(user, serviceTable0, serviceTable1);
+        await expectUnpressable(expect, user, cloneButton);
+      });
+    });
+    completeServiceTest('works', async ({expect, user, serviceTable0, serviceTable1}) => {
+      const cloneButton = within(serviceTable0).getByTestId('clone0to1Button');
+      const row = await addFirstRow(user, serviceTable0);
+      await populateRow(user, row);
+      await user.click(cloneButton);
+      expect(readTablePage(serviceTable0)).toStrictEqual(readTablePage(serviceTable1));
     });
   });
   describe('tables', () => { //confirm that mismatched tables prevent submission and clear/block the xCheck
