@@ -1189,6 +1189,8 @@ describe('services', () => {
           await cloneFrom(user, serviceTable0);
           await user.click(servicesCommitButton);
           const { body } = await getLastPost();
+          expect(body.service.MAIN[0].rows.length).toBe(1);
+          expect(body.service.MAIN[1].rows.length).toBe(1);
           expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
           expect(body.service.MAIN[1].rows[0]).toStrictEqual(expectation);
           expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
