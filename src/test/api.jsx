@@ -1202,7 +1202,7 @@ describe('services', () => {
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-  await addFullRow(user, serviceTable0, {
+  await populateRow(user, await addFirstRow(user, serviceTable0), {
     ship:      'Indus',
     rating:    'Butch',
     fromday:   5,
