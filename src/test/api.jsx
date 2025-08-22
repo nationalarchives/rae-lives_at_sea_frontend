@@ -1214,7 +1214,8 @@ describe('services', () => {
       });
     });
     describe('random', () => { //TODO Should run this with and without xCheck set (and perhaps run all of the above services.post tests with and without xcheck set, too)
-      completeServiceTest('multiple', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => { //I think this should be enough for random testing
+                               //     Leaving it for now as the xCheck set behaviour needs tidying up (e.g. should I only send one table in this case)
+      completeServiceTest('multiple rows', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => { //I think this should be enough for random testing
         const nRows = random(4, 11); //tests get slower and slower as row count increases
         await(addFirstRow(user, serviceTable0));
         for(let i = 1; i < nRows; i++) {
