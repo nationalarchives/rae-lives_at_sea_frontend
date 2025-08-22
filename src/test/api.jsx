@@ -6,7 +6,7 @@ import { cleanup } from '@testing-library/react';
 import Person from '@/person.jsx';
 import { describe, test as baseTest, vi } from 'vitest';
 import { dump } from './config/testutils';
-import { union, intersection, difference, random, range, isEqual } from 'lodash';
+import { union, intersection, difference, random, range, isEqual, sampleSize } from 'lodash';
 
 //Following tricks https://stackoverflow.com/a/72289488, http://pawelgoscicki.com/archives/2022/05/testing-usenavigate-navigate-from-react-router-v6/, https://mayashavin.com/articles/two-shades-of-mocking-vitest to spy on useParams
 import * as router from 'react-router';
@@ -1215,6 +1215,33 @@ describe('services', () => {
         expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
         expect(body.service.MAIN[0].complete).toBe(true);
         expect(body.service.MAIN[1].complete).toBe(true);
+      });
+    });
+    describe('random', () => { //TODO Should run this with and without xCheck set (and perhaps run all of the above services.post tests with and without xcheck set, too)
+      completeServiceTest('multiple', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => { //I think this should be enough for random testing
+        const nRows = random(4, 11); //tests get slower and slower as row count increases
+        await(addFirstRow(user, serviceTable0));
+        for(let i = 1; i < nRows; i++) {
+          await addTopRow(user, serviceTable0); //addTopRow should be a touch faster, so is the best choice when I don't care exactly where the row is
+        }
+        for(let i = 0; i < nRows; i++) {
+          const fields = [...(sampleSize(EDITABLE_SERVICE_TEXT_FIELDS, random(1, EDITABLE_SERVICE_TEXT_FIELDS.length))),
+                          ...(sampleSize(EDITABLE_SERVICE_NUMERIC_FIELDS, random(1, EDITABLE_SERVICE_NUMERIC_FIELDS.length))),
+          ]; //IIUC, sampleSize samples without replacement. Therefore this gets a random mix of unique text and numeric fields, but at least one of each.
+          const content = {};
+          for(const field of fields) content[field] = null;
+          await(partialPopulateRow(user, getRow(serviceTable0, i), content));
+        }
+        const expectation = readTablePage(serviceTable0);
+        await cloneFrom(user, serviceTable0);
+        await user.click(servicesCommitButton);
+        const { body } = await getLastPost();
+        for(let i = 0; i < 2; i++) {
+          expect(body.service.MAIN[i].rows.length).toBe(nRows);
+          expect(body.service.MAIN[i].rows).toStrictEqual(expectation);
+          expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
+          expect(body.service.MAIN[i].complete).toBe(true);
+        }
       });
     });
   });
