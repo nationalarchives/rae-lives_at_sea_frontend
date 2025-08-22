@@ -341,8 +341,8 @@ function randomCellIdentifier() {
 
 function randomCellContent(field) {
   if(field === 'ship'      || field === 'rating')  return randomString();
-  if(field === 'fromday'   || field === 'today')   return random(0, 28);
-  if(field === 'frommonth' || field === 'tomonth') return random(0, 12);
+  if(field === 'fromday'   || field === 'today')   return random(1, 28); //0 is a legit value, but also the default -- I usually want to differ from the default
+  if(field === 'frommonth' || field === 'tomonth') return random(1, 12); //0 is a legit value, but also the default -- I usually want to differ from the default
   if(field === 'fromyear'  || field === 'toyear')  return Number('18' + random(10,99));
   throw new Error(`Unknown field ${field}`);
 }
