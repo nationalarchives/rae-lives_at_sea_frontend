@@ -303,17 +303,17 @@ function randomCellContent(field) {
   throw new Error(`Unknown field ${field}`);
 }
 
-async function addEmptyRow(user, table) {
+async function addFirstRow(user, table) {
   await user.click(within(await table).getByTestId('firstRowButton'));
 }
 
-async function addEmptyRowBoth(user, table0) {
-  await addEmptyRow(user, table0);
+async function addFirstRowBoth(user, table0) {
+  await addFirstRow(user, table0);
   await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
 async function addPartialRow(user, table, content = { [randomCellIdentifier()]: null }) {
-  await addEmptyRow(user, table);
+  await addFirstRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
   for(const field in content) {
     const c = content[field] === null ? inputEscaper(randomCellContent(field)) : content[field];
@@ -327,7 +327,7 @@ async function addPartialRowBoth(user, table0, content = { [randomCellIdentifier
 }
 
 async function addFullRow(user, table, content = {}) {
-  await addEmptyRow(user, table);
+  await addFirstRow(user, table);
   const fields = getServiceCells(getRow(table, 0));
   await user.type(fields.ship,      `${content.ship      || inputEscaper(randomCellContent('ship'))     }{Enter}`);
   await user.type(fields.rating,    `${content.rating    || inputEscaper(randomCellContent('rating'))   }{Enter}`);
@@ -950,7 +950,7 @@ describe('services', () => {
       expect(getDV(cb[1])).toBe('true');
 
       //add a row to each table so that the button will be enabled
-      //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
+      //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
       await addPartialRowBoth(user, serviceTable0);
 
       await user.click(component.getByTestId('servicesCommitButton'));
@@ -964,7 +964,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
-        //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
+        //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
         await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
@@ -978,7 +978,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //just to ensure that the button is not disabled due to no state change
-        //NB Cannot use addEmptyRowBoth, this would generate the popup that warns about empty rows
+        //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
         await addPartialRowBoth(user, serviceTable0);
 
         //preconditions
@@ -1038,7 +1038,7 @@ describe('services', () => {
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
-          await addEmptyRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
 //console.log('** BLANK (1) **'); dumpTables(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
