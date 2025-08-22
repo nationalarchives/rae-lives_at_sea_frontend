@@ -249,28 +249,28 @@ function nTableRows(table) {
   return nRows;
 }
 
-function dumpTable(table) {
-  for(let i = 0; ; i++) {
-    let row;
-    try {
-      row = getRow(table, i);
+function readTablePage(table) {
+  const page = [];
+  for(let i = 0; i < nTableRows(table); i++) {
+    const row = {};
+    for(const [key, value] of Object.entries(getServiceCells(getRow(table, i)))) {
+      row[key] = value.title;
     }
-    catch(e) {
-      if(e.name === 'TestingLibraryElementError') { //probably we have run out of rows
-        return;
-      }
-      else throw e;
-    }
-    console.log(Object.entries(getServiceCells(row)).map((x)=>`${x[0]}: ${x[1].title}`));
+    page.push(row);
   }
+  return page;
 }
 
-function dumpTables(table0, table1) {
+function dumpTablePage(table) {
+  console.log(readTablePage(table));
+}
+
+function dumpTablesPage(table0, table1) {
   console.log('Table 0');
-  dumpTable(table0);
+  dumpTablePage(table0);
   console.log();
   console.log('Table 1');
-  dumpTable(table1);
+  dumpTablePage(table1);
 }
 
 function getServiceCells(row) {
@@ -1050,36 +1050,36 @@ describe('services', () => {
     for(const side of ['left', 'right']) {
       describe(side, () => { //modifying the <side>-hand table
         completeServiceTest('blank', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
-//console.log('** BLANK (0) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** BLANK (0) **'); dumpTablesPage(serviceTable0, serviceTable1);
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
           await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
-//console.log('** BLANK (1) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** BLANK (1) **'); dumpTablesPage(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
           await expectUnpressable(expect, user, servicesCommitButton);
         });
         completeServiceTest('partial', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
-//console.log('** PARTIAL (0)*'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** PARTIAL (0)*'); dumpTablesPage(serviceTable0, serviceTable1);
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
           const row = await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
           await partialPopulateRow(user, row);
-//console.log('** PARTIAL (1)*'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** PARTIAL (1)*'); dumpTablesPage(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
           await expectUnpressable(expect, user, servicesCommitButton);
         });
         completeServiceTest('full', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
-//console.log('** FULL  (0) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** FULL  (0) **'); dumpTablesPage(serviceTable0, serviceTable1);
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
           const row = await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
           await populateRow(user, row);
-//console.log('** FULL  (1) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** FULL  (1) **'); dumpTablesPage(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
           await expectUnpressable(expect, user, servicesCommitButton);
@@ -1087,34 +1087,34 @@ describe('services', () => {
         describe('different', () => { //different row *content*, but same row count
           completeServiceTest('partial', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
             const fieldId = randomCellIdentifier();
-//console.log('** DP    (0) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DP    (0) **'); dumpTablesPage(serviceTable0, serviceTable1);
             const [leftRow] = await addFirstRowBoth(user, serviceTable0, serviceTable1);
             await partialPopulateRow(user, leftRow, { [fieldId]: null });
             await cloneFrom(user, serviceTable0);
-//console.log('** DP    (1) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DP    (1) **'); dumpTablesPage(serviceTable0, serviceTable1);
 
             await user.click(xCheck);
             expect(getDV(xCheck)).toBe('true');
 
             const field = getServiceCells(getRow(side === 'left' ?  serviceTable0 : serviceTable1, 0))[fieldId];
             await user.type(field, '0{Enter}');
-//console.log('** DP    (2) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DP    (2) **'); dumpTablesPage(serviceTable0, serviceTable1);
 
             expect(getDV(xCheck)).toBe('false');
             await expectUnpressable(expect, user, xCheck);
             await expectUnpressable(expect, user, servicesCommitButton);
           });
           completeServiceTest('full', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
-//console.log('** DF    (0) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DF    (0) **'); dumpTablesPage(serviceTable0, serviceTable1);
             const [leftRow] = await addFirstRowBoth(user, serviceTable0, serviceTable1);
             await populateRow(user, leftRow);
             await cloneFrom(user, serviceTable0);
-//console.log('** DF    (1) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DF    (1) **'); dumpTablesPage(serviceTable0, serviceTable1);
             await user.click(xCheck);
             expect(getDV(xCheck)).toBe('true');
             const field = getServiceCells(getRow(side === 'left' ?  serviceTable0 : serviceTable1, 0))[randomCellIdentifier()];
             await user.type(field, '0{Enter}');
-//console.log('** DF    (2) **'); dumpTables(serviceTable0, serviceTable1);
+//console.log('** DF    (2) **'); dumpTablesPage(serviceTable0, serviceTable1);
 
             expect(getDV(xCheck)).toBe('false');
             await expectUnpressable(expect, user, xCheck);
