@@ -1180,6 +1180,25 @@ describe('services', () => {
       });
     }
   });
+  describe('post', () => { //test that we can post fields OK
+    describe('individual', () => {
+      for(const field of EDITABLE_SERVICE_FIELDS) {
+        completeServiceTest(field, async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => {
+          await partialPopulateRow(user, await addFirstRow(user, serviceTable0), { [field]: null });
+          const expectation = readTablePage(serviceTable0)[0];
+          await cloneFrom(user, serviceTable0);
+          await user.click(servicesCommitButton);
+          const { body } = await getLastPost();
+          expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
+          expect(body.service.MAIN[1].rows[0]).toStrictEqual(expectation);
+          expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
+          expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
+          expect(body.service.MAIN[0].complete).toBe(true);
+          expect(body.service.MAIN[1].complete).toBe(true);
+        });
+      }
+    });
+  });
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
