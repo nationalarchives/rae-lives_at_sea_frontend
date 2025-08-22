@@ -243,6 +243,12 @@ const SERVICE_FIELDS = [
   'toyear',
 ];
 
+function nTableRows(table) {
+  const x_to_y_of_z = Object.values(within(table).getByClass(/^MuiTablePagination-displayedRows/)).at(-1).children;
+  const nRows = Number(x_to_y_of_z.match(/\d+$/)[0]);
+  return nRows;
+}
+
 function dumpTable(table) {
   for(let i = 0; ; i++) {
     let row;
@@ -276,7 +282,14 @@ function getServiceCells(row) {
 }
 
 function getRow(table, index) {
-  return within(table).getByRowIndex(index);
+  if(index < 0) {
+    const rowIndex = nTableRows(table) + index;
+    if(rowIndex < 0) throw new Error();
+    return within(table).getByRowIndex(rowIndex);
+  }
+  else {
+    return within(table).getByRowIndex(index);
+  }
 }
 
 function getCheckboxes(tables) {
@@ -289,6 +302,10 @@ function getCheckboxes(tables) {
 
 function getDV(component) {
   return component.getAttribute('data-value');
+}
+
+async function cloneFrom(user, table) {
+  await user.click(within(table).getByTestId(/^clone\dto\dButton$/));
 }
 
 function randomCellIdentifier() {
@@ -305,30 +322,37 @@ function randomCellContent(field) {
 
 async function addFirstRow(user, table) {
   await user.click(within(await table).getByTestId('firstRowButton'));
+  return getRow(table, 0);
 }
 
-async function addFirstRowBoth(user, table0) {
-  await addFirstRow(user, table0);
-  await user.click(within(table0).getByTestId('clone0to1Button'));
+async function addFirstRowBoth(user, table0, table1) {
+  return [
+    await addFirstRow(user, table0),
+    await addFirstRow(user, table1),
+  ];
 }
 
-async function addPartialRow(user, table, content = { [randomCellIdentifier()]: null }) {
-  await addFirstRow(user, table);
-  const fields = getServiceCells(getRow(table, 0));
+async function addTopRow(user, table) {
+  await user.click(within(getRow(table, 0)).getByTestId('newRowAboveButton'));
+  return getRow(table, 0);
+}
+
+async function addRow(user, table, baseIndex = -1) { //add row below row with given index (negative numbers count from end)
+  await user.click(within(getRow(table, baseIndex)).getByTestId('newRowBelowButton'));
+  if(baseIndex < 0) return getRow(table, baseIndex);
+  else              return getRow(table, baseIndex + 1);
+}
+
+async function partialPopulateRow(user, row, content = { [randomCellIdentifier()]: null }) {
+  const fields = getServiceCells(row);
   for(const field in content) {
     const c = content[field] === null ? inputEscaper(randomCellContent(field)) : content[field];
     await user.type(fields[field], `${c}{Enter}`);
   }
 }
 
-async function addPartialRowBoth(user, table0, content = { [randomCellIdentifier()]: null }) {
-  await addPartialRow(user, table0, content);
-  await user.click(within(table0).getByTestId('clone0to1Button'));
-}
-
-async function addFullRow(user, table, content = {}) {
-  await addFirstRow(user, table);
-  const fields = getServiceCells(getRow(table, 0));
+async function populateRow(user, row, content = {}) {
+  const fields = getServiceCells(row);
   await user.type(fields.ship,      `${content.ship      || inputEscaper(randomCellContent('ship'))     }{Enter}`);
   await user.type(fields.rating,    `${content.rating    || inputEscaper(randomCellContent('rating'))   }{Enter}`);
   await user.type(fields.fromday,   `${content.fromday   || inputEscaper(randomCellContent('fromday'))  }{Enter}`);
@@ -337,11 +361,6 @@ async function addFullRow(user, table, content = {}) {
   await user.type(fields.today,     `${content.today     || inputEscaper(randomCellContent('today'))    }{Enter}`);
   await user.type(fields.tomonth,   `${content.tomonth   || inputEscaper(randomCellContent('tomonth'))  }{Enter}`);
   await user.type(fields.toyear,    `${content.toyear    || inputEscaper(randomCellContent('toyear'))   }{Enter}`);
-}
-
-async function addFullRowBoth(user, table0, content = {}) {
-  await addFullRow(user, table0, content);
-  await user.click(within(table0).getByTestId('clone0to1Button'));
 }
 
 function expectUnpressable(expect, user, button) {
@@ -951,7 +970,8 @@ describe('services', () => {
 
       //add a row to each table so that the button will be enabled
       //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
-      await addPartialRowBoth(user, serviceTable0);
+      await partialPopulateRow(user, await addFirstRow(user, serviceTable0));
+      await cloneFrom(user, serviceTable0);
 
       await user.click(component.getByTestId('servicesCommitButton'));
       const {url} = await getLastPost();
@@ -963,9 +983,9 @@ describe('services', () => {
       emptyServiceTest('neither', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
-        //just to ensure that the button is not disabled due to no state change
         //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
-        await addPartialRowBoth(user, serviceTable0);
+        await partialPopulateRow(user, await addFirstRow(user, serviceTable0));
+        await cloneFrom(user, serviceTable0);
 
         //preconditions
         expect(getDV(cb[0])).toBe('false');
@@ -977,13 +997,9 @@ describe('services', () => {
       emptyServiceTest('first', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
-        //just to ensure that the button is not disabled due to no state change
-        //NB Cannot use addFirstRowBoth, this would generate the popup that warns about empty rows
-        await addPartialRowBoth(user, serviceTable0);
-
         //preconditions
         await user.click(cb[0]);
-        expect(getDV(cb[0])).toBe('true');
+        expect(getDV(cb[0])).toBe('true'); //this is already a state change
         expect(getDV(cb[1])).toBe('false');
 
         await expectUnpressable(expect, user, xCheck);
@@ -995,7 +1011,7 @@ describe('services', () => {
         //preconditions
         await user.click(cb[1]);
         expect(getDV(cb[0])).toBe('false');
-        expect(getDV(cb[1])).toBe('true');
+        expect(getDV(cb[1])).toBe('true'); //this is already a state change
 
         await expectUnpressable(expect, user, xCheck);
         await expectUnpressable(expect, user, servicesCommitButton);
@@ -1004,7 +1020,7 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //preconditions
-        await Promise.all([
+        await Promise.all([ //these are already state changes
           user.click(cb[0]),
           user.click(cb[1]),
         ]);
@@ -1049,7 +1065,8 @@ describe('services', () => {
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
-          await addPartialRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          const row = await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          await partialPopulateRow(user, row);
 //console.log('** PARTIAL (1)*'); dumpTables(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
@@ -1060,7 +1077,8 @@ describe('services', () => {
           await user.click(xCheck); //this state change would permit commit, but is about to get undone
           expect(getDV(xCheck)).toBe('true');
 
-          await addFullRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          const row = await addFirstRow(user, side === 'left' ?  serviceTable0 : serviceTable1); //this state change should permit commit, but commit will be blocked due to other table not matching
+          await populateRow(user, row);
 //console.log('** FULL  (1) **'); dumpTables(serviceTable0, serviceTable1);
           expect(getDV(xCheck)).toBe('false');
           await expectUnpressable(expect, user, xCheck);
@@ -1070,7 +1088,9 @@ describe('services', () => {
           completeServiceTest('partial', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
             const fieldId = randomCellIdentifier();
 //console.log('** DP    (0) **'); dumpTables(serviceTable0, serviceTable1);
-            await addPartialRowBoth(user, serviceTable0, { [fieldId]: null }); //...Both functions require table 0
+            const [leftRow] = await addFirstRowBoth(user, serviceTable0, serviceTable1);
+            await partialPopulateRow(user, leftRow, { [fieldId]: null });
+            await cloneFrom(user, serviceTable0);
 //console.log('** DP    (1) **'); dumpTables(serviceTable0, serviceTable1);
 
             await user.click(xCheck);
@@ -1086,7 +1106,9 @@ describe('services', () => {
           });
           completeServiceTest('full', async ({expect, user, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
 //console.log('** DF    (0) **'); dumpTables(serviceTable0, serviceTable1);
-            await addFullRowBoth(user, serviceTable0); //...Both functions require table 0
+            const [leftRow] = await addFirstRowBoth(user, serviceTable0, serviceTable1);
+            await populateRow(user, leftRow);
+            await cloneFrom(user, serviceTable0);
 //console.log('** DF    (1) **'); dumpTables(serviceTable0, serviceTable1);
             await user.click(xCheck);
             expect(getDV(xCheck)).toBe('true');
