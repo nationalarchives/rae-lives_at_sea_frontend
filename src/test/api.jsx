@@ -1189,14 +1189,12 @@ describe('services', () => {
           await cloneFrom(user, serviceTable0);
           await user.click(servicesCommitButton);
           const { body } = await getLastPost();
-          expect(body.service.MAIN[0].rows.length).toBe(1);
-          expect(body.service.MAIN[1].rows.length).toBe(1);
-          expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
-          expect(body.service.MAIN[1].rows[0]).toStrictEqual(expectation);
-          expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
-          expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
-          expect(body.service.MAIN[0].complete).toBe(true);
-          expect(body.service.MAIN[1].complete).toBe(true);
+          for(let i = 0; i < 2; i++) {
+            expect(body.service.MAIN[i].rows.length).toBe(1);
+            expect(body.service.MAIN[i].rows[0]).toStrictEqual(expectation);
+            expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
+            expect(body.service.MAIN[i].complete).toBe(true);
+          }
         });
       }
     });
@@ -1207,14 +1205,12 @@ describe('services', () => {
         await cloneFrom(user, serviceTable0);
         await user.click(servicesCommitButton);
         const { body } = await getLastPost();
-        expect(body.service.MAIN[0].rows.length).toBe(1);
-        expect(body.service.MAIN[1].rows.length).toBe(1);
-        expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
-        expect(body.service.MAIN[1].rows[0]).toStrictEqual(expectation);
-        expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
-        expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
-        expect(body.service.MAIN[0].complete).toBe(true);
-        expect(body.service.MAIN[1].complete).toBe(true);
+        for(let i = 0; i < 2; i++) {
+          expect(body.service.MAIN[i].rows.length).toBe(1);
+          expect(body.service.MAIN[i].rows[0]).toStrictEqual(expectation);
+          expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
+          expect(body.service.MAIN[i].complete).toBe(true);
+        }
       });
     });
     describe('random', () => { //TODO Should run this with and without xCheck set (and perhaps run all of the above services.post tests with and without xcheck set, too)
