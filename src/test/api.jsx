@@ -243,6 +243,25 @@ const SERVICE_FIELDS = [
   'toyear',
 ];
 
+const EDITABLE_SERVICE_TEXT_FIELDS = [
+  'ship',
+  'rating',
+];
+
+const EDITABLE_SERVICE_NUMERIC_FIELDS = [
+  'fromday',
+  'frommonth',
+  'fromyear',
+  'today',
+  'tomonth',
+  'toyear',
+];
+
+const EDITABLE_SERVICE_FIELDS = [
+ ...EDITABLE_SERVICE_TEXT_FIELDS,
+ ...EDITABLE_SERVICE_NUMERIC_FIELDS,
+];
+
 function nTableRows(table) {
   const x_to_y_of_z = Object.values(within(table).getByClass(/^MuiTablePagination-displayedRows/)).at(-1).children;
   const nRows = Number(x_to_y_of_z.match(/\d+$/)[0]);
@@ -254,7 +273,15 @@ function readTablePage(table) {
   for(let i = 0; i < nTableRows(table); i++) {
     const row = {};
     for(const [key, value] of Object.entries(getServiceCells(getRow(table, i)))) {
-      row[key] = value.title;
+      if(key === 'rowid') {
+        row.row_number = Number(value.title);
+      }
+      else {
+        let readValue = value.title;
+        if(readValue === '') readValue = null;
+        else if(EDITABLE_SERVICE_NUMERIC_FIELDS.includes(key)) readValue = Number(readValue);
+        row[key] = readValue;
+      }
     }
     page.push(row);
   }
