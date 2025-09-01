@@ -257,6 +257,11 @@ const EDITABLE_SERVICE_NUMERIC_FIELDS = [
   'toyear',
 ];
 
+const SERVICE_NUMERIC_FIELDS = [
+  'rowid',
+  ...EDITABLE_SERVICE_NUMERIC_FIELDS,
+];
+
 const EDITABLE_SERVICE_FIELDS = [
  ...EDITABLE_SERVICE_TEXT_FIELDS,
  ...EDITABLE_SERVICE_NUMERIC_FIELDS,
@@ -268,18 +273,18 @@ function nTableRows(table) {
   return nRows;
 }
 
-function readTablePage(table) {
+function readTablePage(table, api = true) { //if api is true, convert data into api format
   const page = [];
   for(let i = 0; i < nTableRows(table); i++) {
     const row = {};
     for(const [key, value] of Object.entries(getServiceCells(getRow(table, i)))) {
-      if(key === 'rowid') {
-        row.row_number = Number(value.title);
+      let readValue = value.title;
+      if(readValue === '') readValue = null;
+      else if(SERVICE_NUMERIC_FIELDS.includes(key)) readValue = Number(readValue);
+      if(api && key === 'rowid') { //this is the only special case for api format
+        row.row_number = readValue;
       }
       else {
-        let readValue = value.title;
-        if(readValue === '') readValue = null;
-        else if(EDITABLE_SERVICE_NUMERIC_FIELDS.includes(key)) readValue = Number(readValue);
         row[key] = readValue;
       }
     }
