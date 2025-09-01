@@ -208,6 +208,18 @@ const EDITABLE_PERSON_FIELDS = [
   ...EDITABLE_PERSON_TOGGLES,
 ];
 
+const EMPTY_FIRST_ROW = {
+  rowid: 1,
+  ship: null,
+  rating: null,
+  fromday: 0,
+  frommonth: 0,
+  fromyear: 0,
+  today: 0,
+  tomonth: 0,
+  toyear: 0,
+};
+
 { //make sure I've set up my data right
   const comparison = ['nameId', 'person_role', 'error', ...EDITABLE_PERSON_TEXT_FIELDS, ...EDITABLE_PERSON_NUMERIC_FIELDS, ...EDITABLE_PERSON_TOGGLES];
   const d1 = difference(PERSON_FIELDS, comparison);
@@ -311,6 +323,17 @@ function getServiceCells(row) {
     cells[field] = within(row).getByField(field);
   }
   return cells;
+}
+
+function getServiceData(cells) {
+  const data = {};
+  for(const [field, cell] of Object.entries(cells)) {
+    data[field] = cell.getAttribute('title');
+    if(SERVICE_NUMERIC_FIELDS.includes(field)) {
+      data[field] = Number(data[field]);
+    }
+  }
+  return data;
 }
 
 function getRow(table, index) {
@@ -541,6 +564,7 @@ const emptyPersonTest       = baseTest.extend(FIXTURES.dataTest(9999999902));
 const emptyServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999905)); //services present but no rows and in incomplete state
 const completeServiceTest   = baseTest.extend(FIXTURES.dataTest(9999999903)); //still no rows, but both tables are flagged complete
 const reconciledServiceTest = baseTest.extend(FIXTURES.dataTest(9999999904)); //services reconciled into a single table (but no rows)
+const blankServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999906)); //one empty row (both tables)
 //TODO: Add tests for pressing both types of button (services and person)
 describe('person', () => {
   describe('commit url', () => {
@@ -1249,6 +1273,71 @@ describe('services', () => {
       }
     });
   });
+});
+
+//TODO Is this an API test? Feels much more like interface.
+//TODO Implement the "single table" view and test that -- though it should be much the same thing, minus a few buttons
+describe('servicereconciler', () => {
+  for(const side of ['left', 'right']) {
+    emptyServiceTest(`add first row (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
+      await addFirstRow(user, serviceTable);
+      expect(nTableRows(serviceTable)).toBe(1);
+      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
+    });
+    //TODO: Test that empty table only has "first row" button
+    //TODO: Test that non-empty table does not have "first row" button
+    blankServiceTest(`add row above single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
+      expect(nTableRows(serviceTable)).toBe(1);
+      await populateRow(user, getRow(serviceTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(serviceTable, 0)));
+      await user.click(within(getRow(serviceTable, 0)).getByTestId('newRowAboveButton'));
+      expect(nTableRows(serviceTable)).toBe(2);
+      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
+      expect(getServiceData(getServiceCells(getRow(serviceTable, 1)))).toStrictEqual({...rowData, rowid: 2});
+    });
+    blankServiceTest(`add row below single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
+      expect(nTableRows(serviceTable)).toBe(1);
+      await populateRow(user, getRow(serviceTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(serviceTable, 0)));
+      await user.click(within(getRow(serviceTable, 0)).getByTestId('newRowBelowButton'));
+      expect(nTableRows(serviceTable)).toBe(2);
+      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(rowData);
+      expect(getServiceData(getServiceCells(getRow(serviceTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
+    });
+    blankServiceTest(`delete single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
+      expect(nTableRows(serviceTable)).toBe(1);
+      await user.click(within(getRow(serviceTable, 0)).getByTestId('deleteRowButton'));
+      expect(nTableRows(serviceTable)).toBe(0);
+      //TODO: Expect the "add first row" button to have appeared
+    });
+    blankServiceTest(`overwrite other (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      await populateRow(user, getRow(thisTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(thisTable, 0)));
+      await user.click(within(getRow(thisTable, 0)).getByTestId('overwriteOtherButton'));
+      expect(nTableRows(thisTable)).toBe(1);
+      expect(nTableRows(thatTable)).toBe(1);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 0)))).toStrictEqual(rowData);
+      expect(getServiceData(getServiceCells(getRow(thatTable, 0)))).toStrictEqual(rowData);
+    });
+    blankServiceTest(`insert other (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      await populateRow(user, getRow(thisTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(thisTable, 0)));
+      await user.click(within(getRow(thisTable, 0)).getByTestId('insertOtherButton'));
+      expect(nTableRows(thisTable)).toBe(1);
+      expect(nTableRows(thatTable)).toBe(2);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 0)))).toStrictEqual(rowData);
+      expect(getServiceData(getServiceCells(getRow(thatTable, 0)))).toStrictEqual(rowData);
+      expect(getServiceData(getServiceCells(getRow(thatTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
+    });
+  }
 });
 
 baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
