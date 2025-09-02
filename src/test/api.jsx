@@ -336,6 +336,14 @@ function getServiceData(cells) {
   return data;
 }
 
+function getAllServiceData(table) {
+  const data = [];
+  for(const rowIndex of range(0, nTableRows(table))) {
+    data.push(getServiceData(getServiceCells(getRow(table, rowIndex))));
+  }
+  return data;
+}
+
 function getRow(table, index) {
   if(index < 0) {
     const rowIndex = nTableRows(table) + index;
@@ -1337,6 +1345,47 @@ describe('servicereconciler', () => {
       expect(getServiceData(getServiceCells(getRow(thatTable, 0)))).toStrictEqual(rowData);
       expect(getServiceData(getServiceCells(getRow(thatTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
     });
+    for(const copyMode of ['insert', 'overwrite']) {
+      blankServiceTest(`${copyMode} directly below from directly below (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+        const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+        const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+        //preconditions -- thisTable has one extra row, with some random content
+        await user.click(within(getRow(thisTable, 0)).getByTestId('newRowBelowButton'));
+        expect(nTableRows(thisTable)).toBe(2);
+        await populateRow(user, getRow(thisTable, 0), { ship: 'this.one' });
+        await populateRow(user, getRow(thisTable, 1), { ship: 'this.two' });
+        await populateRow(user, getRow(thatTable, 0), { ship: 'that.one' });
+        const thisData = getAllServiceData(thisTable);
+        const thatData = getAllServiceData(thatTable);
+
+        //actual test
+        await user.click(within(getRow(thisTable, -1)).getByTestId(copyMode + 'OtherButton'));
+        expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
+        expect(getAllServiceData(thatTable)).toStrictEqual([...thatData, thisData[1]]);
+      });
+      blankServiceTest(`${copyMode} directly below from deeper below (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+        const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+        const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+        //preconditions -- thisTable has n extra rows, with some random content
+        await populateRow(user, getRow(thisTable, 0), { ship: 'this.0' });
+        const nExtraRows = random(4, 11);
+        for(const row of range(0, nExtraRows)) {
+          await user.click(within(getRow(thisTable, row)).getByTestId('newRowBelowButton'));
+          await populateRow(user, getRow(thisTable, row + 1), { ship: `this.${row + 1}` });
+        }
+        expect(nTableRows(thisTable)).toBe(nExtraRows + 1);
+        await populateRow(user, getRow(thatTable, 0), { ship: 'that.1' });
+        const thisData = getAllServiceData(thisTable);
+        const thatData = getAllServiceData(thatTable);
+
+        //actual test
+        await user.click(within(getRow(thisTable, -1)).getByTestId(copyMode + 'OtherButton'));
+        expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
+        expect(getAllServiceData(thatTable)).toStrictEqual([...thatData, {...thisData.at(-1), rowid: 2}]); //bottom row of this table appears at bottom of thatTable, with updated rowid
+      });
+    }
   }
 });
 
