@@ -1326,6 +1326,51 @@ describe('servicereconciler', () => {
       expect(getServiceData(getServiceCells(getRow(thisTable, 1)))).toStrictEqual({...rowData, rowid: 2});
       expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
+    blankServiceTest(`add row above top of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+      for(const row of thisData) { row.rowid += 1; }
+
+      //actual test
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowAboveButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([EMPTY_FIRST_ROW, ...thisData]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`add row above bottom of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      const extraRowCount = await addNServiceRows(user, thisTable);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+      const lastThisData = thisData.pop();
+      lastThisData.rowid += 1;
+
+      //actual test
+      await user.click(within(getRow(thisTable, -1)).getByTestId('newRowAboveButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([...thisData, { ...EMPTY_FIRST_ROW, rowid: extraRowCount + 1 }, lastThisData]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`add row above in middle of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //precondition
+      await addNServiceRows(user, thisTable, 3);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //actual test
+      await user.click(within(getRow(thisTable, 2)).getByTestId('newRowAboveButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([thisData[0], thisData[1], {...EMPTY_FIRST_ROW, rowid: 3}, {...thisData[2], rowid: 4}, {...thisData[3], rowid: 5}]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
     blankServiceTest(`add row below single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
       const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
       const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
@@ -1338,6 +1383,50 @@ describe('servicereconciler', () => {
       expect(getServiceData(getServiceCells(getRow(thisTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
       expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
+    blankServiceTest(`add row below bottom of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      const extraRowCount = await addNServiceRows(user, thisTable);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //actual test
+      await user.click(within(getRow(thisTable, -1)).getByTestId('newRowBelowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([...thisData, { ...EMPTY_FIRST_ROW, rowid: extraRowCount + 2 }]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`add row below top of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      const extraRowCount = await addNServiceRows(user, thisTable);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+      const firstThisData = thisData.shift();
+      for(const row of thisData) { row.rowid += 1; }
+
+      //actual test
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowBelowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([firstThisData, { ...EMPTY_FIRST_ROW, rowid: 2 }, ...thisData]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`add row below in middle of multiple service entries (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 3);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //actual test
+      await user.click(within(getRow(thisTable, 1)).getByTestId('newRowBelowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([thisData[0], thisData[1], {...EMPTY_FIRST_ROW, rowid: 3}, {...thisData[2], rowid: 4}, {...thisData[3], rowid: 5}]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
     blankServiceTest(`delete single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
       const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
       const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
@@ -1345,6 +1434,77 @@ describe('servicereconciler', () => {
       await user.click(within(getRow(thisTable, 0)).getByTestId('deleteRowButton'));
       expect(nTableRows(thisTable)).toBe(0);
       //TODO: Expect the "add first row" button to have appeared
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`delete top service entry of two (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 1);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //test
+      await user.click(within(getRow(thisTable, 0)).getByTestId('deleteRowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([{...(thisData[1]), rowid: 1}]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`delete bottom service entry of two (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 1);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //test
+      await user.click(within(getRow(thisTable, 1)).getByTestId('deleteRowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([thisData[0]]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`delete top service entry of multiple (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 2);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //test
+      await user.click(within(getRow(thisTable, 0)).getByTestId('deleteRowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([{...(thisData[1]), rowid: 1}, {...(thisData[2]), rowid: 2}]);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`delete bottom service entry of multiple (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 2);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+      thisData.pop();
+
+      //test
+      await user.click(within(getRow(thisTable, 2)).getByTestId('deleteRowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
+    });
+    blankServiceTest(`delete middle service entry of multiple (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //preconditions
+      await addNServiceRows(user, thisTable, 2);
+      await populateRows(user, thisTable, 'this');
+      const thisData = getAllServiceData(thisTable);
+
+      //test
+      await user.click(within(getRow(thisTable, 1)).getByTestId('deleteRowButton'));
+      expect(getAllServiceData(thisTable)).toStrictEqual([{...(thisData[0]), rowid: 1}, {...(thisData[2]), rowid: 2}]);
       expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
     blankServiceTest(`overwrite other (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
