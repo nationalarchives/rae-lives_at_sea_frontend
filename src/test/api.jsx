@@ -414,6 +414,17 @@ async function partialPopulateRow(user, row, content = { [randomCellIdentifier()
   }
 }
 
+async function addNServiceRows(user, table, nExtraRows = random(4, 7)) {
+  const nRows = nTableRows(table);
+  for(const row of range(nRows - 1, nRows - 1 + nExtraRows)) {
+    await user.click(within(getRow(table, row)).getByTestId('newRowBelowButton'));
+  }
+  return nExtraRows;
+}
+
+//TODO: This is a very inefficient way to build up data.
+//      In some cases I really want to test the user interface.
+//      But where this is being used to set up test preconditions -- especially over multiple rows -- would be much more efficient to just create the data structure that the React component reads
 async function populateRow(user, row, content = {}) {
   const fields = getServiceCells(row);
   await user.type(fields.ship,      `${content.ship      || inputEscaper(randomCellContent('ship'))     }{Enter}`);
@@ -424,6 +435,13 @@ async function populateRow(user, row, content = {}) {
   await user.type(fields.today,     `${content.today     || inputEscaper(randomCellContent('today'))    }{Enter}`);
   await user.type(fields.tomonth,   `${content.tomonth   || inputEscaper(randomCellContent('tomonth'))  }{Enter}`);
   await user.type(fields.toyear,    `${content.toyear    || inputEscaper(randomCellContent('toyear'))   }{Enter}`);
+}
+
+async function populateRows(user, table, prefix = '', indexField = 'ship') {
+  for(const row of range(0, nTableRows(table))) {
+    const content = indexField ? { [indexField]: `${prefix}${row}` } : {};
+    await populateRow(user, getRow(table, row), content);
+  }
 }
 
 async function deleteRow(user, table, index) {
@@ -1376,14 +1394,9 @@ describe('servicereconciler', () => {
         const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
 
         //preconditions -- thisTable has n extra rows, with some random content
-        await populateRow(user, getRow(thisTable, 0), { ship: 'this.0' });
-        const nExtraRows = random(4, 11);
-        for(const row of range(0, nExtraRows)) {
-          await user.click(within(getRow(thisTable, row)).getByTestId('newRowBelowButton'));
-          await populateRow(user, getRow(thisTable, row + 1), { ship: `this.${row + 1}` });
-        }
-        expect(nTableRows(thisTable)).toBe(nExtraRows + 1);
-        await populateRow(user, getRow(thatTable, 0), { ship: 'that.1' });
+        await addNServiceRows(user, thisTable);
+        await populateRows(user, thisTable, 'this');
+        await populateRow(user, getRow(thatTable, 0), { ship: 'that1' });
         const thisData = getAllServiceData(thisTable);
         const thatData = getAllServiceData(thatTable);
 
