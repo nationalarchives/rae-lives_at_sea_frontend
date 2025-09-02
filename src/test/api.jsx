@@ -1288,39 +1288,46 @@ describe('services', () => {
 describe('servicereconciler', () => {
   for(const side of ['left', 'right']) {
     emptyServiceTest(`add first row (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
-      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
-      await addFirstRow(user, serviceTable);
-      expect(nTableRows(serviceTable)).toBe(1);
-      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      await addFirstRow(user, thisTable);
+      expect(nTableRows(thisTable)).toBe(1);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
+      expect(nTableRows(thatTable)).toBe(0);
+      //TODO: expect the 'add first' button to be present in thatTable, expect it not to be in thisTable (perhaps in separate tests that establish this is what happens when nTableRows === 0)
     });
-    //TODO: Test that empty table only has "first row" button
-    //TODO: Test that non-empty table does not have "first row" button
     blankServiceTest(`add row above single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
-      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
-      expect(nTableRows(serviceTable)).toBe(1);
-      await populateRow(user, getRow(serviceTable, 0));
-      const rowData = getServiceData(getServiceCells(getRow(serviceTable, 0)));
-      await user.click(within(getRow(serviceTable, 0)).getByTestId('newRowAboveButton'));
-      expect(nTableRows(serviceTable)).toBe(2);
-      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
-      expect(getServiceData(getServiceCells(getRow(serviceTable, 1)))).toStrictEqual({...rowData, rowid: 2});
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      expect(nTableRows(thisTable)).toBe(1);
+      await populateRow(user, getRow(thisTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(thisTable, 0)));
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowAboveButton'));
+      expect(nTableRows(thisTable)).toBe(2);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 0)))).toStrictEqual(EMPTY_FIRST_ROW);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 1)))).toStrictEqual({...rowData, rowid: 2});
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
     blankServiceTest(`add row below single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
-      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
-      expect(nTableRows(serviceTable)).toBe(1);
-      await populateRow(user, getRow(serviceTable, 0));
-      const rowData = getServiceData(getServiceCells(getRow(serviceTable, 0)));
-      await user.click(within(getRow(serviceTable, 0)).getByTestId('newRowBelowButton'));
-      expect(nTableRows(serviceTable)).toBe(2);
-      expect(getServiceData(getServiceCells(getRow(serviceTable, 0)))).toStrictEqual(rowData);
-      expect(getServiceData(getServiceCells(getRow(serviceTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      expect(nTableRows(thisTable)).toBe(1);
+      await populateRow(user, getRow(thisTable, 0));
+      const rowData = getServiceData(getServiceCells(getRow(thisTable, 0)));
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowBelowButton'));
+      expect(nTableRows(thisTable)).toBe(2);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 0)))).toStrictEqual(rowData);
+      expect(getServiceData(getServiceCells(getRow(thisTable, 1)))).toStrictEqual({...EMPTY_FIRST_ROW, rowid: 2});
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
     blankServiceTest(`delete single service entry (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
-      const serviceTable = side === 'left' ? serviceTable0 : serviceTable1;
-      expect(nTableRows(serviceTable)).toBe(1);
-      await user.click(within(getRow(serviceTable, 0)).getByTestId('deleteRowButton'));
-      expect(nTableRows(serviceTable)).toBe(0);
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+      expect(nTableRows(thisTable)).toBe(1);
+      await user.click(within(getRow(thisTable, 0)).getByTestId('deleteRowButton'));
+      expect(nTableRows(thisTable)).toBe(0);
       //TODO: Expect the "add first row" button to have appeared
+      expect(getAllServiceData(thatTable)).toStrictEqual([EMPTY_FIRST_ROW]);
     });
     blankServiceTest(`overwrite other (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
       const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
