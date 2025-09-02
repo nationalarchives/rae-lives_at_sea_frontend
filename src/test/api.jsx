@@ -1565,6 +1565,64 @@ describe('servicereconciler', () => {
         expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
         expect(getAllServiceData(thatTable)).toStrictEqual([...thatData, {...thisData.at(-1), rowid: 2}]); //bottom row of this table appears at bottom of thatTable, with updated rowid
       });
+      blankServiceTest(`${copyMode} random middle (bigger) to random middle (smaller) (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+        const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+        const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+        //preconditions (these tables are guaranteed to both have a row at the index being copied, "missing row" cases are covered above)
+        const thisExtraRows = await addNServiceRows(user, thisTable, random(5, 7));
+        const thatExtraRows = await addNServiceRows(user, thatTable, random(3, 5));
+        expect(thisExtraRows).toBeGreaterThan(thatExtraRows);
+        await populateRows(user, thisTable, 'this'); //a handy side-effect of the this/that labelling is that it is impossible for rows in different tables to contain identical data
+        await populateRows(user, thatTable, 'that');
+        const thisData = getAllServiceData(thisTable);
+        const thatData = getAllServiceData(thatTable);
+        const baseRow = random(2, 3);
+
+        //test
+        await user.click(within(getRow(thisTable, baseRow)).getByTestId(copyMode + 'OtherButton'));
+        expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
+        if(copyMode === 'insert') {
+          const postscript = thatData.slice(baseRow);
+          for(const row of postscript) row.rowid += 1;
+          expect(getAllServiceData(thatTable)).toStrictEqual([...(thatData.slice(0, baseRow)), thisData[baseRow], ...postscript]);
+        }
+        else if(copyMode === 'overwrite') {
+          expect(getAllServiceData(thatTable)).toStrictEqual([...(thatData.slice(0, baseRow)), thisData[baseRow], ...(thatData.slice(baseRow + 1))]);
+        }
+        else {
+          throw new Error();//unreachable
+        }
+      });
+      blankServiceTest(`${copyMode} random middle (smaller) to random middle (bigger) (from ${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+        const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+        const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+        //preconditions (these tables are guaranteed to both have a row at the index being copied, "missing row" cases are covered above)
+        const thisExtraRows = await addNServiceRows(user, thisTable, random(3, 5));
+        const thatExtraRows = await addNServiceRows(user, thatTable, random(5, 7));
+        expect(thisExtraRows).toBeLessThan(thatExtraRows);
+        await populateRows(user, thisTable, 'this'); //a handy side-effect of the this/that labelling is that it is impossible for rows in different tables to contain identical data
+        await populateRows(user, thatTable, 'that');
+        const thisData = getAllServiceData(thisTable);
+        const thatData = getAllServiceData(thatTable);
+        const baseRow = random(2, 3);
+
+        //test
+        await user.click(within(getRow(thisTable, baseRow)).getByTestId(copyMode + 'OtherButton'));
+        expect(getAllServiceData(thisTable)).toStrictEqual(thisData);
+        if(copyMode === 'insert') {
+          const postscript = thatData.slice(baseRow);
+          for(const row of postscript) row.rowid += 1;
+          expect(getAllServiceData(thatTable)).toStrictEqual([...(thatData.slice(0, baseRow)), thisData[baseRow], ...postscript]);
+        }
+        else if(copyMode === 'overwrite') {
+          expect(getAllServiceData(thatTable)).toStrictEqual([...(thatData.slice(0, baseRow)), thisData[baseRow], ...(thatData.slice(baseRow + 1))]);
+        }
+        else {
+          throw new Error();//unreachable
+        }
+      });
     }
   }
 });
