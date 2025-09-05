@@ -1634,7 +1634,6 @@ describe('servicereconciler', () => {
 
         //preconditions (these tables are guaranteed to both have a row at the index being copied, "missing row" cases are covered above)
         const thisExtraRows = await addNServiceRows(user, thisTable, random(3, 4));
-console.log(prettyDOM(thisTable));
         const thatExtraRows = await addNServiceRows(user, thatTable, random(5, 7));
         expect(thisExtraRows).toBeLessThan(thatExtraRows);
         await populateRows(user, thisTable, 'this'); //a handy side-effect of the this/that labelling is that it is impossible for rows in different tables to contain identical data
