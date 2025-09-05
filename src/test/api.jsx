@@ -592,6 +592,8 @@ const emptyServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999905)); //
 const completeServiceTest   = baseTest.extend(FIXTURES.dataTest(9999999903)); //still no rows, but both tables are flagged complete
 const reconciledServiceTest = baseTest.extend(FIXTURES.dataTest(9999999904)); //services reconciled into a single table (but no rows)
 const blankServiceTest      = baseTest.extend(FIXTURES.dataTest(9999999906)); //one empty row (both tables)
+const pageServiceTest       = baseTest.extend(FIXTURES.dataTest(9999999907)); //full page, with basic data (both tables)
+const twoPageServiceTest    = baseTest.extend(FIXTURES.dataTest(9999999908)); //two full pages, with basic data (both tables)
 //TODO: Add tests for pressing both types of button (services and person)
 describe('person', () => {
   describe('commit url', () => {
@@ -1625,6 +1627,264 @@ describe('servicereconciler', () => {
         }
       });
     }
+    pageServiceTest(`add row above top of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const expectedThisData = [EMPTY_FIRST_ROW];
+      for(const row of getPageServiceData(thisTable)) { //initial data (we know this test case starts with exactly one full page
+        row.rowid += 1;
+        expectedThisData.push(row);
+      }
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowAboveButton'));
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    pageServiceTest(`add row below top of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const thisData = getPageServiceData(thisTable); //initial data (we know this test case starts with exactly one full page
+      const expectedThisData = [thisData.shift(), {...EMPTY_FIRST_ROW, rowid: 2}];
+      for(const row of thisData) {
+        row.rowid += 1;
+        expectedThisData.push(row);
+      }
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, 0)).getByTestId('newRowBelowButton'));
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    pageServiceTest(`add row below bottom of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const expectedThisData = [...(getPageServiceData(thisTable)), {...EMPTY_FIRST_ROW, rowid: PAGE_ROWS + 1}];
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, -1)).getByTestId('newRowBelowButton')); //this works because we have not yet got more than one page
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    pageServiceTest(`add row above bottom of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const thisData = getPageServiceData(thisTable);
+      const expectedThisData = [...(thisData.slice(0, -1)), {...EMPTY_FIRST_ROW, rowid: PAGE_ROWS}, {...(thisData.at(-1)), rowid: PAGE_ROWS + 1}];
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, -1)).getByTestId('newRowAboveButton')); //this works because we have not yet got more than one page
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    pageServiceTest(`add row below in middle of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const targetRow = random(40, 60);
+      const thisData = getPageServiceData(thisTable);
+      for(const row of thisData.slice(targetRow + 1)) row.rowid += 1;
+      const expectedThisData = [...(thisData.slice(0, targetRow + 1)), {...EMPTY_FIRST_ROW, rowid: targetRow + 2}, ...(thisData.slice(targetRow + 1))];
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, targetRow)).getByTestId('newRowBelowButton')); //this works because we have not yet got more than one page
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    pageServiceTest(`add row above in middle of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      const targetRow = random(40, 60);
+      const thisData = getPageServiceData(thisTable);
+      for(const row of thisData.slice(targetRow)) row.rowid += 1;
+      const expectedThisData = [...(thisData.slice(0, targetRow)), {...EMPTY_FIRST_ROW, rowid: targetRow + 1}, ...(thisData.slice(targetRow))];
+      const expectedThatData = getPageServiceData(thatTable); //we know that this test case starts with exactly one full page
+
+      //test action
+      await user.click(within(getRow(thisTable, targetRow)).getByTestId('newRowAboveButton')); //this works because we have not yet got more than one page
+
+      //new data
+      const postData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      expect(getPageServiceData(thatTable)).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS);
+    });
+    twoPageServiceTest(`delete row at top of full two pages (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //we know that this test case starts with exactly two full pages
+      const expectedThisData = getPageServiceData(thisTable);
+      expectedThisData.shift();
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      expectedThisData.push(...(getPageServiceData(thisTable, 1)));
+      for(const row of expectedThisData) row.rowid -= 1;
+      await user.click(within(thisTable).getByAriaLabel('Go to previous page'));
+
+      const expectedThatData = getPageServiceData(thatTable);
+      await user.click(within(thatTable).getByAriaLabel('Go to next page'));
+      expectedThatData.push(...(getPageServiceData(thatTable, 1)));
+      await user.click(within(thatTable).getByAriaLabel('Go to previous page'));
+
+      //test action
+      await user.click(within(getRow(thisTable, 0)).getByTestId('deleteRowButton'));
+
+      //new data
+      const postThisData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postThisData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postThisData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      const postThatData = getPageServiceData(thatTable);
+      await user.click(within(thatTable).getByAriaLabel('Go to next page'));
+      postThatData.push(...(getPageServiceData(thatTable, 1)));
+      expect(postThatData).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS * 2); //confirms that there is not another page to look at
+    });
+    twoPageServiceTest(`delete row at bottom of first of full two pages (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => {
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //we know that this test case starts with exactly two full pages
+      const expectedThisData = getPageServiceData(thisTable);
+      expectedThisData.pop();
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      expectedThisData.push(...(getPageServiceData(thisTable, 1)));
+      for(const row of expectedThisData.slice(PAGE_ROWS - 1)) row.rowid -= 1;
+      await user.click(within(thisTable).getByAriaLabel('Go to previous page'));
+
+      const expectedThatData = getPageServiceData(thatTable);
+      await user.click(within(thatTable).getByAriaLabel('Go to next page'));
+      expectedThatData.push(...(getPageServiceData(thatTable, 1)));
+      await user.click(within(thatTable).getByAriaLabel('Go to previous page'));
+
+      //test action
+      await user.click(within(getRow(thisTable, PAGE_ROWS - 1)).getByTestId('deleteRowButton'));
+
+      //new data
+      const postThisData = getPageServiceData(thisTable);
+      await user.click(within(thisTable).getByAriaLabel('Go to next page'));
+      postThisData.push(...(getPageServiceData(thisTable, 1)));
+      expect(postThisData).toStrictEqual(expectedThisData);
+
+      //thatTable is unchanged
+      const postThatData = getPageServiceData(thatTable);
+      await user.click(within(thatTable).getByAriaLabel('Go to next page'));
+      postThatData.push(...(getPageServiceData(thatTable, 1)));
+      expect(postThatData).toStrictEqual(expectedThatData);
+      expect(nTableRows(thatTable)).toBe(PAGE_ROWS * 2); //confirms that there is not another page to look at
+    });
+    pageServiceTest(`insert row in middle of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => { //TODO
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //we know that this test case starts with exactly one full page
+      const expectedThisData = getPageServiceData(thisTable);
+
+      const targetRow = random(40, 60);
+      const thatData = getPageServiceData(thatTable);
+      const expectedThatData = thatData.slice(0, targetRow);
+      expectedThatData.push(expectedThisData[targetRow]);
+      expectedThatData.push(...(thatData.slice(targetRow)));
+      for(const row of expectedThatData.slice(targetRow + 1)) {
+        row.rowid += 1;
+      }
+
+      //test action
+      await user.click(within(getRow(thisTable, targetRow)).getByTestId('insertOtherButton'));
+
+      //thisTable is unchanged
+      const postThisData = getPageServiceData(thisTable);
+      expect(postThisData).toStrictEqual(expectedThisData);
+      expect(nTableRows(thisTable)).toBe(PAGE_ROWS);
+
+      //new data
+      const postThatData = getPageServiceData(thatTable);
+      await user.click(within(thatTable).getByAriaLabel('Go to next page'));
+      postThatData.push(...(getPageServiceData(thatTable, 1)));
+      expect(postThatData).toStrictEqual(expectedThatData);
+    });
+    pageServiceTest(`overwrite row in middle of full page (${side})`, async ({expect, user, serviceTable0, serviceTable1}) => { //TODO
+      const thisTable = side === 'left' ? serviceTable0 : serviceTable1;
+      const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
+
+      //we know that this test case starts with exactly one full page
+      const expectedThisData = getPageServiceData(thisTable);
+
+      const targetRow = random(40, 60);
+      const thatData = getPageServiceData(thatTable);
+      const expectedThatData = thatData.slice(0, targetRow);
+      expectedThatData.push(expectedThisData[targetRow]);
+      expectedThatData.push(...(thatData.slice(targetRow + 1)));
+
+      //test action
+      await user.click(within(getRow(thisTable, targetRow)).getByTestId('overwriteOtherButton'));
+
+      //thisTable is unchanged
+      const postThisData = getPageServiceData(thisTable);
+      expect(postThisData).toStrictEqual(expectedThisData);
+      expect(nTableRows(thisTable)).toBe(PAGE_ROWS);
+
+      //new data
+      const postThatData = getPageServiceData(thatTable);
+      expect(postThatData).toStrictEqual(expectedThatData);
+      expect(nTableRows(thisTable)).toBe(PAGE_ROWS);
+    });
   }
 });
 
