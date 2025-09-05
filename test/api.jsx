@@ -1123,9 +1123,10 @@ describe('services', () => {
     });
   });
   describe('xcheck', () => { //we already know from above tests that xcheck can only be set if both complete flags are set
-                             //this is actually a UI test, but it is a constraint on data flow, so not completely nuts to have it here
-                             //TODO: Setting this _should_ result in sending a single unified table back?
     completeServiceTest('xcheck locks complete', async ({expect, user, xCheck, serviceTable0, serviceTable1})=> {
+      //this is actually a UI test, but it is a constraint on data flow, so not completely nuts to have it here
+      //TODO: Setting this _should_ result in sending a single unified table back?
+
       //establish preconditions
       await user.click(xCheck);
       expect(getDV(xCheck)).toBe('true');
@@ -1134,6 +1135,36 @@ describe('services', () => {
       await expectUnpressable(expect, user, cb[0]);
       await expectUnpressable(expect, user, cb[1]);
     });
+    completeServiceTest('xCheck sets RECONCILED', async ({expect, user, getLastPost, xCheck, servicesCommitButton}) => {
+      //preconditions -- we already know that completeServiceTest starts in TRANSCRIBE state, but confirm that the UI state reflects this
+      expect(getDV(xCheck)).toBe('false');
+
+      await user.click(xCheck);
+      expect(getDV(xCheck)).toBe('true');
+      await user.click(servicesCommitButton);
+
+      const { body } = await getLastPost();
+      expect(body.service.MAIN.length).toBe(2);
+      expect(body.service.MAIN[0].step).toBe('RECONCILE');
+      expect(body.service.MAIN[1].step).toBe('RECONCILE');
+    });
+    reconciledServiceTest('Clearing xCheck returns to TRANSCRIBE states', async ({expect, user, getLastPost, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+      //preconditions -- we already know that completeServiceTest starts in TRANSCRIBE state, but confirm that the UI state reflects this
+      expect(getDV(xCheck)).toBe('true');
+      const cb = getCheckboxes([serviceTable0, serviceTable1]);
+      expect(getDV(cb[0])).toBe('true');
+      expect(getDV(cb[1])).toBe('true');
+
+      await user.click(xCheck);
+      expect(getDV(xCheck)).toBe('false');
+      await user.click(servicesCommitButton);
+
+      const { body } = await getLastPost();
+      expect(body.service.MAIN.length).toBe(2);
+      expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
+      expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
+    });
+    //TODO Do I have tests for complete *state*?
   });
   describe('clone', () => { //check the left-to-right and right-to-left buttons
     describe('disabled', () => {
