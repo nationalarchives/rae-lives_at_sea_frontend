@@ -1574,13 +1574,13 @@ describe('servicereconciler', () => {
 
         //preconditions (these tables are guaranteed to both have a row at the index being copied, "missing row" cases are covered above)
         const thisExtraRows = await addNServiceRows(user, thisTable, random(5, 7));
-        const thatExtraRows = await addNServiceRows(user, thatTable, random(3, 5));
+        const thatExtraRows = await addNServiceRows(user, thatTable, random(3, 4));
         expect(thisExtraRows).toBeGreaterThan(thatExtraRows);
         await populateRows(user, thisTable, 'this'); //a handy side-effect of the this/that labelling is that it is impossible for rows in different tables to contain identical data
         await populateRows(user, thatTable, 'that');
         const thisData = getPageServiceData(thisTable);
         const thatData = getPageServiceData(thatTable);
-        const baseRow = random(2, 3);
+        const baseRow = random(1, 2); //smaller side has minimum 3 + 1 = 4 rows, indexed 0 - 3. Indices 1 and 2 therefore count as "middle".
 
         //test
         await user.click(within(getRow(thisTable, baseRow)).getByTestId(copyMode + 'OtherButton'));
@@ -1602,14 +1602,15 @@ describe('servicereconciler', () => {
         const thatTable = side === 'left' ? serviceTable1 : serviceTable0;
 
         //preconditions (these tables are guaranteed to both have a row at the index being copied, "missing row" cases are covered above)
-        const thisExtraRows = await addNServiceRows(user, thisTable, random(3, 5));
+        const thisExtraRows = await addNServiceRows(user, thisTable, random(3, 4));
+console.log(prettyDOM(thisTable));
         const thatExtraRows = await addNServiceRows(user, thatTable, random(5, 7));
         expect(thisExtraRows).toBeLessThan(thatExtraRows);
         await populateRows(user, thisTable, 'this'); //a handy side-effect of the this/that labelling is that it is impossible for rows in different tables to contain identical data
         await populateRows(user, thatTable, 'that');
         const thisData = getPageServiceData(thisTable);
         const thatData = getPageServiceData(thatTable);
-        const baseRow = random(2, 3);
+        const baseRow = random(1, 2); //smaller side has minimum 3 + 1 = 4 rows, indexed 0 - 3. Indices 1 and 2 therefore count as "middle".
 
         //test
         await user.click(within(getRow(thisTable, baseRow)).getByTestId(copyMode + 'OtherButton'));
