@@ -50,8 +50,8 @@ export default defineConfig(({command, mode}) => {
         test: {
           environment: 'jsdom',
           //globals: true,
-          setupFiles: './src/test/config/setupTests.js',
-          include: ['src/test/*.?(c|m)[jt]s?(x)'],
+          setupFiles: './test/config/setupTests.js',
+          include: ['./test/*.?(c|m)[jt]s?(x)'],
           pool: 'vmThreads',
         },
         resolve: {

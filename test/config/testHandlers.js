@@ -24,7 +24,7 @@ export const handlers = [
             return HttpResponse.json(PERSON_MAP.get(Number(personid)));
           }
           else {
-            const fnam = 'src/test/data/responses/person_personid_' + personid + '.json';
+            const fnam = './test/data/responses/person_personid_' + personid + '.json';
             return readFile(fnam).then(
               (jsonStr) => HttpResponse.json(JSON.parse(jsonStr)),
               () => {
