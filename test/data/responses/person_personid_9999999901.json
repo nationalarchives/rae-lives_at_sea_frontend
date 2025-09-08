@@ -64,6 +64,15 @@
       "parent_id": 1907
     }
   ],
-  "service": {},
+  "service": {
+    "MAIN": [
+      {
+        "user_id": 1,
+        "step": "RECONCILE",
+        "complete": true,
+        "rows": null
+      }
+    ]
+  },
   "versions": null
 }

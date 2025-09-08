@@ -1930,9 +1930,7 @@ baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, us
     tomonth:   2,
     toyear:    1874,
   });
-  await user.click(within(serviceTable0).getByTestId('completeCheckbox'));
   await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
-  await user.click(within(serviceTable1).getByTestId('completeCheckbox'));
   await user.click(servicesCommitButton);
 
   const lastPost = await getLastPost();

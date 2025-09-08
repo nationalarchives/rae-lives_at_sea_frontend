@@ -42,6 +42,7 @@
     "birthmonth": 3,
     "birthyear": 1871,
     "birthplace": "Gosport",
+    "birthcounty": "Hampshire",
     "occupation": "Training Ship Formidable",
     "dischargeday": 0,
     "dischargemonth": 0,
@@ -63,6 +64,47 @@
       "parent_id": 1907
     }
   ],
-  "service": {},
-  "versions": null
+  "service": {
+    "MAIN": [
+      {
+        "md5_hash": "d41d8cd9-8f00-b204-e980-0998ecf8427e",
+        "user_id": 2,
+        "step": "RECONCILE",
+        "complete": true,
+        "rows": null
+      }
+    ]
+  },
+  "versions": [
+    {
+      "service_type": "MAIN",
+      "service_version_id": 537259,
+      "md5_hash": "d41d8cd9-8f00-b204-e980-0998ecf8427e",
+      "version_user": 248,
+      "createddate": "2025-07-25",
+      "closeddate": "2025-07-26",
+      "step": "TRANSCRIBE1",
+      "complete": true
+    },
+    {
+      "service_type": "MAIN",
+      "service_version_id": 537260,
+      "md5_hash": "d41d8cd9-8f00-b204-e980-0998ecf8427e",
+      "version_user": 2068,
+      "createddate": "2025-07-25",
+      "closeddate": "2025-07-26",
+      "step": "TRANSCRIBE2",
+      "complete": true
+    },
+    {
+      "service_type": "MAIN",
+      "service_version_id": 537261,
+      "md5_hash": "d41d8cd9-8f00-b204-e980-0998ecf8427e",
+      "version_user": 2,
+      "createddate": "2025-07-26",
+      "closeddate": null,
+      "step": "RECONCILE",
+      "complete": true
+    }
+  ]
 }
