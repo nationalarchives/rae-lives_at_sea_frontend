@@ -8,12 +8,12 @@ import { createRoutesStub, BrowserRouter, useRouteError } from 'react-router';
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { DialogsProvider } from '@toolpad/core/useDialogs'; //FIXME: Work out what to do if I am wrapping App. Perhaps just move the provider to index.jsx.
 import { writeFile } from 'fs/promises';
-import { RECORDS } from '@/queries';
+import { initPieceBucket, RECORDS } from '@/queries';
 
 //re https://mswjs.io/docs/faq#why-do-i-get-stale-responses-with-react-queryswrapolloetc
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const queryClient = new QueryClient();
-const queryCache = queryClient.getQueryCache();
+initPieceBucket(queryClient);
 
 const server = setupServer(...handlers);
 
