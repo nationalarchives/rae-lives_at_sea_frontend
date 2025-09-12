@@ -56,6 +56,10 @@ export const handlers = [
     PERSON_MAP.set(data.person.person_id, data);
     return HttpResponse.text('Hello, Lambda');
   }),
+  http.get(import.meta.env.VITE_API_ROOT + 'status/piece_summary/last_piecesummary', ({request}) => {
+    if(TRACE) console.log('GET /status/piece_summary/last_piecesummary');
+    return HttpResponse.text('Not found', {status: 404}); //TODO: Might want to check what message the API returns, 'Not found' is just a placeholder
+  }),
   http.get(import.meta.env.VITE_API_ROOT + 'status/piece_summary', ({request}) => {
     const search_params = new URL(request.url).searchParams;
     if(search_params.has('piece_number')) {
@@ -121,5 +125,10 @@ export const handlers = [
     //This is what I get from curl. Depending on server configuration, we might get a CORS error instead.
     return HttpResponse.json({message: 'Internal server error'}, {status: 502});
   }),
+  http.post(import.meta.env.VITE_API_ROOT + 'status/piece_summary/last_piecesummary', async ({request}) => {
+    const pid = getNumericParam(request.url, 'piece_number');
+    if(TRACE) console.log('POST /status/piece_summary/last_piecesummary', pid);
+    const data = request.json();
+    return HttpResponse.text('Hello, Lambda');
   }),
 ];
