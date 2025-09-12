@@ -1,17 +1,29 @@
-import { http, HttpResponse, passthrough } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { readFile } from 'fs/promises';
-import { isEqual } from 'lodash';
-const { diff } = require('node:util');
 
+const TRACE = false;
 
 export const PERSON_MAP = new Map();
- 
 
-//To deal with URLs that I just want to pass through, do something like this:
-//http.get(import.meta.env.VITE_API_ROOT + 'person', () => passthrough()), //NB An empty callback seems to work just as well as explicit call to passthrough(). So far as I can tell, returning (anything? an HttpResponse?) stops the request gettig sent out to the network, but otherwise it is sent and returned as if it had not been intercepted.
+export function getParam(url, param) {
+  const searchParams = new URL(url).searchParams;
+  if(searchParams.has(param)) {
+    if(searchParams.getAll(param).length >= 1) {
+      return searchParams.getAll(param).at(-1); //if multiple are given then we just get the last one
+    }
+  }
+  return null;
+}
+
+export function getNumericParam(url, param) {
+  const text = getParam(url, param);
+  if(text.match(/^\d+$/)) return Number(text);
+  else                    return null;
+}
 
 export const handlers = [
   http.get(import.meta.env.VITE_API_ROOT + 'person/lastpost', ({request}) => {
+    if(TRACE) console.log('GET /person/lastpost');
     return HttpResponse.text('Not found', {status: 404}); //TODO: Might want to check what message the API returns, 'Not found' is just a placeholder
   }),
   http.get(import.meta.env.VITE_API_ROOT + 'person', ({request}) => {
@@ -19,6 +31,7 @@ export const handlers = [
     if(search_params.has('personid')) {
       if(search_params.getAll('personid').length >= 1) {
         const personid = search_params.getAll('personid').at(-1);
+        if(TRACE) console.log('GET /person', personid);
         if(personid.match(/^\d+$/)) {
           if(PERSON_MAP.has(Number(personid))) {
             return HttpResponse.json(PERSON_MAP.get(Number(personid)));
@@ -38,6 +51,7 @@ export const handlers = [
     return HttpResponse.json({message: 'Internal server error'}, {status: 502});
   }),
   http.post(import.meta.env.VITE_API_ROOT + 'person', async ({request}) => {
+    if(TRACE) console.log('POST /person');
     const data = await request.json();
     PERSON_MAP.set(data.person.person_id, data);
     return HttpResponse.text('Hello, Lambda');
