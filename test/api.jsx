@@ -961,7 +961,7 @@ describe('person', () => {
               }
             }
             await expectUnpressable(expect, user, personCommitButton);
-            await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, but this is anyway not really necessary -- it really should not have been called if we cannot press the button
+            await expect(vi.waitFor(()=>expect(postSpy).not.toHaveBeenCalled())); //not sure about the timing here, and suspect that the expect() wrapper means that this test cannot fail, but this is anyway not really necessary -- it really should not have been called if we cannot press the button. Just keeping it around to remind myself that it would be nice to be able to check for such things. This applies to all other lines of this form (all of which are of the "not really necessary" kind -- the only use of waitFor that really matters is the one in getLastPost, but that doesn't have the outer expect wrapper and appears to work).
           });
         }
       });
