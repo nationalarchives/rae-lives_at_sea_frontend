@@ -24,7 +24,9 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-  queryCache.clear();
+  queryClient.clear(); //sometimes there might be hanging fetchs or mutates at the end of a test.
+                       //obviously should be avoided and will throw an error if we query in such a condition.
+                       //however, it can be worked around using setTimeout and checking functions isFetching and isMutating
   server.resetHandlers();
   PERSON_MAP.clear(); //clear server's internal cache of data changes
   RECORDS.clear();  //clear app's local cache of data changes
