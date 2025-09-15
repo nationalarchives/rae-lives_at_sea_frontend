@@ -23,6 +23,7 @@ const FIXTURES = (function(){
   let personCommitButton = null;
   let servicesCommitButton = null;
   let xCheck = null;
+  let serviceTable = null;
   let serviceTable0 = null;
   let serviceTable1 = null;
   let notWW1 = null;
@@ -134,13 +135,24 @@ const FIXTURES = (function(){
           await use(xCheck);
           xCheck = null;
         },
-        serviceTable0: async({component}, use) => {
+        serviceTable: async({component}, use) => { //for when there is just one table
+          serviceTable = await component.findByTestId('serviceTable');
+          if(component.queryByTestId('serviceTable0') !== null) throw new Error('Single serviceTable alongside multiple serviceTables?');
+          if(component.queryByTestId('serviceTable1') !== null) throw new Error('Single serviceTable alongside multiple serviceTables?');
+          await use(serviceTable);
+          serviceTable = null;
+        },
+        serviceTable0: async({component}, use) => { //for when there are two tables
           serviceTable0 = await component.findByTestId('serviceTable0');
+          if(component.queryByTestId('serviceTable')  !== null) throw new Error('Single serviceTable alongside multiple serviceTables?');
+          if(component.queryByTestId('serviceTable1') === null) throw new Error('serviceTable0 exists but serviceTable1 does not');
           await use(serviceTable0);
           serviceTable0 = null;
         },
-        serviceTable1: async({component}, use) => {
+        serviceTable1: async({component}, use) => { //for when there are two tables
           serviceTable1 = await component.findByTestId('serviceTable1');
+          if(component.queryByTestId('serviceTable')  !== null) throw new Error('Single serviceTable alongside multiple serviceTables?');
+          if(component.queryByTestId('serviceTable0') === null) throw new Error('serviceTable0 exists but serviceTable1 does not');
           await use(serviceTable1);
           serviceTable1 = null;
         },
@@ -1143,25 +1155,22 @@ describe('services', () => {
         await user.click(servicesCommitButton);
 
         const { body } = await getLastPost();
-        expect(body.service.MAIN.length).toBe(2);
+        expect(body.service.MAIN.length).toBe(1);
         expect(body.service.MAIN[0].step).toBe('RECONCILE');
-        expect(body.service.MAIN[1].step).toBe('RECONCILE');
       });
-      reconciledServiceTest('Clearing xCheck returns to TRANSCRIBE states', async ({expect, user, getLastPost, xCheck, serviceTable0, serviceTable1, servicesCommitButton}) => {
+      reconciledServiceTest('Clearing xCheck returns to TRANSCRIBE state', async ({expect, user, getLastPost, xCheck, serviceTable, servicesCommitButton}) => {
         //preconditions -- we already know that completeServiceTest starts in TRANSCRIBE state, but confirm that the UI state reflects this
         expect(getDV(xCheck)).toBe('true');
-        const cb = getCheckboxes([serviceTable0, serviceTable1]);
-        expect(getDV(cb[0])).toBe('true');
-        expect(getDV(cb[1])).toBe('true');
+        const cb = getCheckboxes([serviceTable])[0];
+        expect(getDV(cb)).toBe('true');
 
         await user.click(xCheck);
         expect(getDV(xCheck)).toBe('false');
         await user.click(servicesCommitButton);
 
         const { body } = await getLastPost();
-        expect(body.service.MAIN.length).toBe(2);
+        expect(body.service.MAIN.length).toBe(1);
         expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
-        expect(body.service.MAIN[1].step).toBe('TRANSCRIBE2');
       });
       //TODO Do I have tests for complete *state*?
     });
@@ -1272,40 +1281,42 @@ describe('services', () => {
   describe('post', () => { //test that we can post fields OK
     describe('individual', () => {
       for(const field of EDITABLE_SERVICE_FIELDS) {
-        completeServiceTest(field, async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => {
+        completeServiceTest(field, async ({expect, user, getLastPost, serviceTable0, servicesCommitButton, component}) => {
           await partialPopulateRow(user, await addFirstRow(user, serviceTable0), { [field]: null });
           const expectation = readTablePage(serviceTable0)[0];
           await cloneFrom(user, serviceTable0);
           await user.click(servicesCommitButton);
           const { body } = await getLastPost();
-          for(let i = 0; i < 2; i++) {
-            expect(body.service.MAIN[i].rows.length).toBe(1);
-            expect(body.service.MAIN[i].rows[0]).toStrictEqual(expectation);
-            expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
-            expect(body.service.MAIN[i].complete).toBe(true);
-          }
+          expect(component.queryByTestId('serviceTable0')).toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
+          expect(component.queryByTestId('serviceTable')).not.toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
+          expect(body.service.MAIN.length).toBe(1);
+          expect(body.service.MAIN[0].rows.length).toBe(1);
+          expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
+          expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1'); //TRANSCRIBE2 would also be legit here, but current implementation is to send the first table only
+          expect(body.service.MAIN[0].complete).toBe(true);
         });
       }
     });
     describe('full', () => {
-      completeServiceTest('complete', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => {
+      completeServiceTest('complete', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton, component}) => {
         await populateRow(user, await addFirstRow(user, serviceTable0));
         const expectation = readTablePage(serviceTable0)[0];
         await cloneFrom(user, serviceTable0);
         await user.click(servicesCommitButton);
         const { body } = await getLastPost();
-        for(let i = 0; i < 2; i++) {
-          expect(body.service.MAIN[i].rows.length).toBe(1);
-          expect(body.service.MAIN[i].rows[0]).toStrictEqual(expectation);
-          expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
-          expect(body.service.MAIN[i].complete).toBe(true);
-        }
+        expect(component.queryByTestId('serviceTable0')).toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
+        expect(component.queryByTestId('serviceTable')).not.toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
+        expect(body.service.MAIN.length).toBe(1);
+        expect(body.service.MAIN[0].rows.length).toBe(1);
+        expect(body.service.MAIN[0].rows[0]).toStrictEqual(expectation);
+        expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
+        expect(body.service.MAIN[0].complete).toBe(true);
       });
     });
     describe('random', () => { //TODO Should run this with and without xCheck set (and perhaps run all of the above services.post tests with and without xcheck set, too)
                                //     Leaving it for now as the xCheck set behaviour needs tidying up (e.g. should I only send one table in this case)
       for(let k = 0; k < N_MULTITESTS; k++) {
-        completeServiceTest('multiple rows', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton}) => { //I think this should be enough for random testing
+        completeServiceTest('multiple rows', async ({expect, user, getLastPost, serviceTable0, servicesCommitButton, component}) => { //I think this should be enough for random testing
           const nRows = random(4, 11); //tests get slower and slower as row count increases
           await(addFirstRow(user, serviceTable0));
           for(let i = 1; i < nRows; i++) {
@@ -1322,13 +1333,14 @@ describe('services', () => {
           const expectation = readTablePage(serviceTable0);
           await cloneFrom(user, serviceTable0);
           await user.click(servicesCommitButton);
+          expect(component.queryByTestId('serviceTable0')).toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
+          expect(component.queryByTestId('serviceTable')).not.toBeNull(); //serviceTable0 has now gone and been replaced by the single service table
           const { body } = await getLastPost();
-          for(let i = 0; i < 2; i++) {
-            expect(body.service.MAIN[i].rows.length).toBe(nRows);
-            expect(body.service.MAIN[i].rows).toStrictEqual(expectation);
-            expect(body.service.MAIN[i].step).toBe('TRANSCRIBE' + (i + 1));
-            expect(body.service.MAIN[i].complete).toBe(true);
-          }
+          expect(body.service.MAIN.length).toBe(1);
+          expect(body.service.MAIN[0].rows.length).toBe(nRows);
+          expect(body.service.MAIN[0].rows).toStrictEqual(expectation);
+          expect(body.service.MAIN[0].step).toBe('TRANSCRIBE1');
+          expect(body.service.MAIN[0].complete).toBe(true);
         });
       }
     });
@@ -1919,8 +1931,8 @@ describe('servicereconciler', () => {
   }
 });
 
-baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable0, serviceTable1, servicesCommitButton}) => {
-  await populateRow(user, await addFirstRow(user, serviceTable0), {
+baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, user, getLastPost, serviceTable, servicesCommitButton}) => {
+  await populateRow(user, await addFirstRow(user, serviceTable), {
     ship:      'Indus',
     rating:    'Butch',
     fromday:   5,
@@ -1930,13 +1942,12 @@ baseTest.extend(FIXTURES.dataTest(100124))('SECOND API TEST', async ({expect, us
     tomonth:   2,
     toyear:    1874,
   });
-  await user.click(within(serviceTable0).getByTestId('clone0to1Button'));
   await user.click(servicesCommitButton);
 
   const lastPost = await getLastPost();
   const main = lastPost.body.service.MAIN;
   expect(Array.isArray(main)).toBe(true);
-  expect(main.length).toBe(2);
+  expect(main.length).toBe(1);
   for(const {rows} of main) {
     expect(rows.length).toBe(1);
     expect(rows[0]).toStrictEqual({
