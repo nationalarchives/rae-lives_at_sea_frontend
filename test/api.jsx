@@ -470,10 +470,11 @@ function findPersonTableField(fieldId, personTable) {
 }
 
 function randomString() {
-  let result = '';
-  for(let i = random(4, 12); i >= 0; i--) {
+  let result = String.fromCharCode(random(33, 126));
+  for(let i = random(4, 10); i >= 0; i--) {
     result += String.fromCharCode(random(32, 126));
   }
+  result += String.fromCharCode(random(33, 126));
   return result;
 }
 
