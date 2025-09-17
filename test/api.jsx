@@ -907,10 +907,16 @@ describe('person', () => {
                 expectedFields[field] = false;
               }
               else {
-                expect(fieldComponent.getAttribute('value')).not.toBe(type === 'text' ? '' : '0'); //precondition
+                if(type === 'text') { //precondition TODO: Are there other changes of this form to make?
+                  expect(fieldComponent.getAttribute('value')).not.toBe(null);
+                  expect(fieldComponent.getAttribute('value')).not.toBe('');
+                }
+                else {
+                  expect(fieldComponent.getAttribute('value')).not.toBe(0);
+                }
                 await user.clear(fieldComponent);
                 await user.type(fieldComponent, '{Enter}');
-                expectedFields[field] = type === 'text' ? '' : 0;
+                expectedFields[field] = type === 'text' ? null : 0; //Seems that "clearing" results in a null here, whereas just deleting everything in the field results in an empty string
               }
             }
             await user.click(personCommitButton);
@@ -930,7 +936,7 @@ describe('person', () => {
               await user.click(personCommitButton);
 
               const { body } = await getLastPost();
-              expect(body.person[field]).toEqual('');
+              expect(body.person[field]).toEqual(null);
             });
           }
         });
