@@ -1128,15 +1128,14 @@ describe('services', () => {
         const cb = getCheckboxes([serviceTable0, serviceTable1]);
 
         //preconditions
-        await Promise.all([ //these are already state changes
-          user.click(cb[0]),
-          user.click(cb[1]),
-        ]);
+        //these are already state changes
+        await user.click(cb[0]);
+        await user.click(cb[1]);
         expect(getDV(cb[0])).toBe('true');
         expect(getDV(cb[1])).toBe('true');
 
-        user.click(xCheck);
-        user.click(servicesCommitButton);
+        await user.click(xCheck);
+        await user.click(servicesCommitButton);
         await getLastPost(); //includes check that there has been a single POST
       });
     });
