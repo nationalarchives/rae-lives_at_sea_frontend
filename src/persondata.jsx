@@ -10,17 +10,21 @@ import ExistingPersonControlPanel from './existingpersoncontrolpanel';
 import PersonTableControlPanel from './persontablecontrolpanel';
 import PersonTable from './persontable';
 import { LockedContext } from './lockedcontext';
+import { snapshot } from './snapshot';
+import { usePrefs } from './prefs';
 
-export default function PersonData({record}) {
+export default function PersonData({record, audit}) {
   const dialogs = useDialogs();
   const [, setLocked] = useContext(LockedContext);
   const { sailorType, nameId } = useParams();
   const { data, setData, mutation } = record;
+  const screenshot = usePrefs((state)=>state.screenshot);
   return (
     <Stack direction='row' width={0.9} alignItems='flex-start'>
       <Card variant='outlined'>
         <PersonTableControlPanel data={data} onChange={()=>{
           setLocked(true);
+          snapshot('sent_name', screenshot, audit, data.person_id);
           mutation.mutate(data, {
             onError: (error, variables) => {
               failedMutationDialog(dialogs, mutation)(error, variables),

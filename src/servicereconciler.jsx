@@ -21,6 +21,8 @@ import HappyIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SadIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { LoadingContext } from './loadingcontext';
 import { LockedContext } from './lockedcontext';
+import { snapshot } from './snapshot';
+import { usePrefs } from './prefs';
 
 import { isEqual, reduce } from 'lodash';
 
@@ -64,7 +66,7 @@ function XCheck({ready, checked, onChange}) {
   );
 }
 
-export default function ServiceReconciler({record}) {
+export default function ServiceReconciler({record, audit}) {
   const {sailorType, nameId} = useParams();
   const [searchParams,] = useSearchParams();
   const { data: serviceRecords, setData: setServiceRecords, mutation: serviceRecordsMutation, status: serviceRecordsQueryStatus } = record;
@@ -73,6 +75,7 @@ export default function ServiceReconciler({record}) {
   const [locked, setLocked] = useContext(LockedContext);
   const emptyOK = useEmptyRowOK(serviceRecords.services.map((x)=>x.records), ROW_PRIMARY);
   const dialogs = useDialogs();
+  const screenshot = usePrefs((state)=>state.screenshot);
 
   const sameServices = (serviceRecords.services.length === 0 || serviceRecords.services.length === 1) ? true : isEqual(serviceRecords.services[0].records, serviceRecords.services[1].records);
   const xCheckReady = serviceRecords.services.every((x)=>x.userid > 0) &&
@@ -274,6 +277,7 @@ export default function ServiceReconciler({record}) {
                    setLocked(true); //synchronous locking
                    const actualChange = async ()=>{
                      if(await emptyOK()) {
+                       snapshot('sent_service', screenshot, audit, nameId);
                        const clone = structuredClone(serviceRecords);
                        clone.services = [clone.services[0]]; //if enter button enabled then must be the same, just write first table
                        setServiceRecords(clone);
