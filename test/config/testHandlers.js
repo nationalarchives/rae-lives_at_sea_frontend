@@ -24,7 +24,7 @@ export function getNumericParam(url, param) {
 export const handlers = [
   http.get(import.meta.env.VITE_API_ROOT + 'person/lastpost', ({request}) => {
     if(TRACE) console.log('GET /person/lastpost');
-    return HttpResponse.text('Not found', {status: 404}); //TODO: Might want to check what message the API returns, 'Not found' is just a placeholder
+    return HttpResponse.json({'L@SRecordsReturned': 0}, {status: 404});
   }),
   http.get(import.meta.env.VITE_API_ROOT + 'person', ({request}) => {
     const search_params = new URL(request.url).searchParams;
