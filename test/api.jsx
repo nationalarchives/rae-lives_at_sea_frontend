@@ -626,20 +626,11 @@ describe('person', () => {
 
       //ideally only the first click would work
       //failing that, ideally all clicks would be rolled up into a single POST
-      //as neither applies (potentially for "how testing works" resons), just confirm that all POSTs are the same
-      expect(postSpy).toHaveBeenCalled();
+      //at time of writing, I believe that we lock the button out after first press, until the mutation completes, so only the first click will work
+      expect(postSpy).toHaveBeenCalledOnce();
 
       //also check that the button is *now* disabled
       await expectUnpressable(expect, user, personCommitButton);
-
-      //I don't know the details of how this structure works, so tell me if assumptions break
-      expect(postSpy.mock.calls.length).toBe(3); //outer list has 1 element per call (and is a list of lists but don't explicitly check that)
-      expect(postSpy.mock.calls[0].length).toBe(1); //each inner list is a single element
-
-      for(let i = 1; i < postSpy.mock.calls.length; i++) {
-        expect(postSpy.mock.calls[i].length).toBe(1); //another assumption check -- each inner list is a single element
-        expect(postSpy.mock.calls[0][0]).toEqual(postSpy.mock.calls[i][0]); //the actual (deep) equality test
-      }
     });
     fullPersonTest('personTriple', async({expect, user, postSpy, birthYear, personCommitButton}) => { //same test as above, but using triple-click instead of 3 single clicks. This seems to work more as expected.
       await user.clear(birthYear); //just to enable the button
