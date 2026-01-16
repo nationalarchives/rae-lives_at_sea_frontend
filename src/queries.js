@@ -1,7 +1,6 @@
 import { createStore, useStore } from 'zustand';
-import { init_data, status_encode, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils';
+import { init_data, status_encode, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils.js';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { isEqual } from 'lodash';
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 //following https://stackoverflow.com/a/1479341
@@ -48,7 +47,8 @@ function getRecord(sailorType, nameId, selection, query) {
 }
 
 function fetchData(params) {
-  const api = import.meta.env.VITE_API_ROOT + params;
+  //const api = import.meta.env.VITE_API_ROOT + params;
+  const api = 'https://ofktct1tij.execute-api.eu-west-2.amazonaws.com/development/' + params;
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
       const response = await fetch(api);
@@ -230,7 +230,7 @@ function translateFromAPI(apiData) {
   return appData;
 }
 
-function translateToAPI(appData) {
+export function translateToAPI(appData) {
   //expect to have been passed data that is safe to manipulate (i.e. cloned from, not referring to, cache)
   const apiData = rename_properties(appData, {
     source_lookup: 'source_lookup',
@@ -321,7 +321,7 @@ function translateToAPI(appData) {
   return apiData;
 }
 
-function mainPersonQF({queryKey}) {
+export function mainPersonQF({queryKey}) {
   const [, {sailorType, nameId}] = queryKey;
   if(typeof(nameId) === 'undefined') {
     return new Promise((resolve, reject) => reject(new Error()));
@@ -358,7 +358,7 @@ function mainPersonQF({queryKey}) {
       return new Promise((resolve, reject) => {
         fetchData('person/lastpost?personid=' + nameId).then(
           (bucketData) => {
-            import.meta.env.MODE !== 'test' && console.log(`Retrieved personid ${nameId} from bucket`);
+            console.log(`Retrieved personid ${nameId} from bucket`);
             if(bucketData.person.person_id !== Number(nameId)) throw new Error('Person id mismatch');
             if('L@SRecordsReturned' in bucketData && bucketData['L@SRecordsReturned'] === 1) {
               delete bucketData['L@SRecordsReturned']; //this is wrapped by the API, we don't want it internally (or we'll end up writing back to the bucket, then the API might try to add it again, horrors may ensue
@@ -374,7 +374,7 @@ function mainPersonQF({queryKey}) {
                 (jsonbody) => {
                   if('L@SRecordsReturned' in jsonbody && jsonbody['L@SRecordsReturned'] === 0) { //failed lastpost lookup, try the database
                     resolve(fetchData('person?personid=' + nameId).then((dbData) => {
-                      import.meta.env.MODE !== 'test' && console.log(`Retrieved personid ${nameId} from database`);
+                      console.log(`Retrieved personid ${nameId} from database`);
                       if(dbData.person.person_id !== Number(nameId)) throw new Error('Person id mismatch');
                       return dbData;
                     }));
