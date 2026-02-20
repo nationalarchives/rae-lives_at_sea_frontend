@@ -2,7 +2,6 @@ import { createStore, useStore } from 'zustand';
 import { init_data, status_encode, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { isEqual } from 'lodash';
-import { fetchAuthSession } from 'aws-amplify/auth';
 
 //following https://stackoverflow.com/a/1479341
 //exporting only for testing purposes -- seems harmless, but perhaps could be avoided with mocks or spies
@@ -69,14 +68,14 @@ function postData(params, body) {
   const api = import.meta.env.VITE_API_ROOT + params;
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
+      //const session = await fetchAuthSession();
+      //const token = session.tokens?.idToken?.toString();
       const response = await fetch(api, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': token || '',
+          //'Authorization': token || '',
         },
         body: JSON.stringify(body),
       });
