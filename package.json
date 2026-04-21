@@ -4,55 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.14.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.7",
-    "@mui/material": "^7.3.7",
-    "@tanstack/query-broadcast-client-experimental": "^5.90.20",
-    "@tanstack/query-sync-storage-persister": "^5.90.22",
     "@tanstack/react-query": "^5.90.20",
-    "@tanstack/react-query-devtools": "^5.91.3",
-    "@tanstack/react-query-persist-client": "^5.90.22",
-    "@toolpad/core": "^0.16.0",
-    "aws-amplify": "^6.16.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "html2canvas": "^1.4.1",
-    "lodash": "^4.17.23",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router": "^7.13.0",
     "zustand": "^5.0.11"
-  },
-  "devDependencies": {
-    "@aws-amplify/backend": "^1.16.1",
-    "@aws-amplify/backend-cli": "^1.7.2",
-    "@eslint/js": "^9.39.2",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@vitejs/plugin-react": "^5.1.3",
-    "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^9.39.2",
-    "eslint-plugin-react": "^7.37.5",
-    "globals": "^17.3.0",
-    "jsdom": "^28.0.0",
-    "msw": "^2.12.9",
-    "vite": "^7.3.1",
-    "vite-plugin-eslint": "^1.8.1",
-    "vitest": "^4.0.18"
-  },
-  "scripts": {
-    "start": "vite",
-    "build": "vite build",
-    "serve": "vite preview",
-    "test": "vitest",
-    "coverage": "vitest run --coverage"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }
