@@ -108,7 +108,7 @@ export function rename_properties(obj, propMap, strict = true) {
   return newObj;
 }
 
-function translateFromAPI(apiData) {
+export function translateFromAPI(apiData) {
   function translateServiceHeader(x) {
     return rename_properties(x, {
       md5_hash: 'md5_hash',
