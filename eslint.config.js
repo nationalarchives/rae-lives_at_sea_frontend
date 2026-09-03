@@ -19,7 +19,7 @@ export default defineConfig([
   pluginReact.configs.flat['jsx-runtime'],
   {
     rules: {
-      "react/prop-types": "warn",
+      "react/prop-types": "off",
       "react-hooks/exhaustive-deps": "error",
       "no-unused-vars": "warn",
       "no-unreachable": "warn",
