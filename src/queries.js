@@ -629,15 +629,25 @@ export function useRecord(sailorType, nameId, selection) {
 export function failedMutationDialog(confirmDialog, mutation) {
   return (error, variables) => {
     confirmDialog({
-                    description: `Save failed due to Error ${error.message}. Try again or contact your developer with detailed error message.`,
+                    description: `Save failed due to Error ${error.message}. If you clear this dialog then you *might* be able to try again. Otherwise press 'Details' to contact your developer with detailed error message.`,
                     title: 'Failed save',
+                    confirmationText: 'Clear',
                     cancellationText: 'Details',
+                    allowClose: false,
                   }).then((x) => {
                     //mutation.reset(); //feels dirty to do this while it is handling the error but should be fine
                                       //so long as this is the last thing that we do with this mutation
                                       //operation -- which it very much should be
                     if(!x.confirmed) {
-                      alert(`Copy this text for your developer:\n${error.message} ${JSON.stringify(variables)} ${error.stack}`);
+                      const msg = `*Message*\n${error.message}\n\n*Variables*\n${JSON.stringify(variables)}\n\n*Stack*\n${error.stack}\n`;
+                      navigator.clipboard.writeText(msg).then((x) => {
+                          alert(`The following error message has been copied to your clipboard.\nPlease paste it to your developer.\n\n${msg}`);
+                        },
+                        (x) => {
+                          console.error(msg);
+                          alert(`The following error message has been written to the console.\nIt will remain available as long as you keep this window open and your developer can tell you how to access it.\nAlternatively, at least the beginning of the message follows in this window, you could for example take a screenshot.\n\n${msg}`)
+                        }
+                      );
                     }
                   });
   };
