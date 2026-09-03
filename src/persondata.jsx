@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useParams } from 'react-router';
 import { Stack, Card } from '@mui/material';
-import { useDialogs } from '@toolpad/core/useDialogs';
+import { useConfirm } from 'material-ui-confirm';
 
 import { isNew, RATING_LAYOUT, OFFICER_LAYOUT } from './data_utils';
 import { failedMutationDialog } from './queries.js';
@@ -14,7 +14,7 @@ import { snapshot } from './snapshot';
 import { usePrefs } from './prefs';
 
 export default function PersonData({record, audit}) {
-  const dialogs = useDialogs();
+  const confirmDialog = useConfirm();
   const [, setLocked] = useContext(LockedContext);
   const { sailorType, nameId } = useParams();
   const { data, setData, mutation } = record;
@@ -27,7 +27,7 @@ export default function PersonData({record, audit}) {
           snapshot('sent_name', screenshot, audit, data.person_id);
           mutation.mutate(data, {
             onError: (error, variables) => {
-              failedMutationDialog(dialogs, mutation)(error, variables),
+              failedMutationDialog(confirmDialog, mutation)(error, variables),
               setLocked(false);
             },
             onSuccess: ()=>{setLocked(false);},

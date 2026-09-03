@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { useDialogs } from '@toolpad/core/useDialogs';
+import { useConfirm } from 'material-ui-confirm';
 import { LoadingContext } from './loadingcontext';
 import { LockedContext } from './lockedcontext';
 
@@ -26,7 +26,7 @@ function checkPrimary(cols, primary) {
 
 //Tables of rows because of the ServiceReconciler use case, where we have two rows but only want to pop up one dialog
 export function useEmptyRowOK(tables_of_rows, primary) {
-  const dialogs = useDialogs();
+  const confirmDialog = useConfirm();
 
   function hasEmptyRow(rows, primary) {
     outer: for(const row of rows) {
@@ -42,11 +42,13 @@ export function useEmptyRowOK(tables_of_rows, primary) {
   //return of true meaning "ok to save" -- either there are no empty rows, or the user has asked to save them
   return async () => {
     if(tables_of_rows.some((rows) => hasEmptyRow(rows, primary))) {
-      return dialogs.confirm('This record contains empty rows. Save anyway?', {
+      return confirmDialog({
+        description: 'This record contains empty rows. Save anyway?',
         title: 'Empty rows',
-        okText: 'Save',
-        cancelText: 'Cancel',
-      });
+        confirmationText: 'Save',
+        cancellationText: 'Cancel',
+        allowClose: false,
+      }).then((x) => x.confirmed);
     }
     else {
       return true;

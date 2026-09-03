@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { useParams } from 'react-router';
 import { failedMutationDialog } from './queries';
 import { Alert, Button, Stack } from '@mui/material';
-import { useDialogs } from '@toolpad/core/useDialogs';
+import { useConfirm } from 'material-ui-confirm';
 import { LoadingContext } from './loadingcontext';
 import { LockedContext } from './lockedcontext';
 import { useEmptyRowOK , DataTable } from './datatable';
@@ -15,7 +15,7 @@ export default function Other({tag, columns, columnGroupingModel, record}) {
   const loading = useContext(LoadingContext);
   const [locked, setLocked] = useContext(LockedContext);
   const emptyOK = useEmptyRowOK([data], 'row');
-  const dialogs = useDialogs();
+  const confirmDialog = useConfirm();
 
   if(queryStatus === 'error') {
     return (<Alert severity='error'>Error fetching data</Alert>);
@@ -31,7 +31,7 @@ export default function Other({tag, columns, columnGroupingModel, record}) {
                   setLocked(true);
                   mutation.mutate(data, {
                     onError: (error, variables) => {
-                      failedMutationDialog(dialogs, mutation)(error, variables);
+                      failedMutationDialog(confirmDialog, mutation)(error, variables);
                       setLocked(false);
                     },
                     onSuccess: ()=>{setLocked(false)}, //see similar code in persondata.jsx for concerns around use of these callbacks

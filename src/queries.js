@@ -626,18 +626,18 @@ export function useRecord(sailorType, nameId, selection) {
 }
 
 //This is UI functionality, shouldn't really be here. But it's always going to be needed along with this stuff. And life is short.
-export function failedMutationDialog(dialogs, mutation) {
+export function failedMutationDialog(confirmDialog, mutation) {
   return (error, variables) => {
-    dialogs.confirm(`Save failed due to Error ${error.message}. Try again or contact your developer with detailed error message.`,
-                  {
+    confirmDialog({
+                    description: `Save failed due to Error ${error.message}. Try again or contact your developer with detailed error message.`,
                     title: 'Failed save',
-                    cancelText: 'Details',
-                  }).then((ok)=>{
+                    cancellationText: 'Details',
+                  }).then((x) => {
                     //mutation.reset(); //feels dirty to do this while it is handling the error but should be fine
                                       //so long as this is the last thing that we do with this mutation
                                       //operation -- which it very much should be
-                    if(!ok) {
-                      dialogs.alert(`${error.message} ${JSON.stringify(variables)} ${error.stack}`, { title: 'Copy this text for your developer', });
+                    if(!x.confirmed) {
+                      alert(`Copy this text for your developer:\n${error.message} ${JSON.stringify(variables)} ${error.stack}`);
                     }
                   });
   };

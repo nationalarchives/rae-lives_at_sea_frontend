@@ -1,6 +1,6 @@
 import { useContext, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router';
-import { useDialogs } from '@toolpad/core/useDialogs';
+import { useConfirm } from 'material-ui-confirm';
 
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
@@ -74,7 +74,7 @@ export default function ServiceReconciler({record, audit}) {
   const loading = useContext(LoadingContext);
   const [locked, setLocked] = useContext(LockedContext);
   const emptyOK = useEmptyRowOK(serviceRecords.services.map((x)=>x.records), ROW_PRIMARY);
-  const dialogs = useDialogs();
+  const confirmDialog = useConfirm();
   const screenshot = usePrefs((state)=>state.screenshot);
 
   const sameServices = (serviceRecords.services.length === 0 || serviceRecords.services.length === 1) ? true : isEqual(serviceRecords.services[0].records, serviceRecords.services[1].records);
@@ -283,7 +283,7 @@ export default function ServiceReconciler({record, audit}) {
                        setServiceRecords(clone);
                        serviceRecordsMutation.mutate(clone, {
                          onError: (error, variables) => {
-                           failedMutationDialog(dialogs, serviceRecordsMutation)(error, variables);
+                           failedMutationDialog(confirmDialog, serviceRecordsMutation)(error, variables);
                            setLocked(false);
                          },
                          onSuccess: ()=>{setLocked(false)}, //see similar code in persondata.jsx for concerns around use of these callbacks

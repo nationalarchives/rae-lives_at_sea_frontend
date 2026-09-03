@@ -8,7 +8,7 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { broadcastQueryClient } from '@tanstack/query-broadcast-client-experimental';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Stack } from '@mui/material';
-import { DialogsProvider } from '@toolpad/core/useDialogs';
+import { ConfirmProvider } from 'material-ui-confirm';
 import { initPieceBucket } from './queries.js';
 
 const queryClientOptions = import.meta.env.VITE_PERSIST_CACHE ?
@@ -70,7 +70,7 @@ function App() {
     console.log("Enabled cache state persistence (changes made will survive refresh)");
     return (
       <div className="App">
-        <DialogsProvider>
+        <ConfirmProvider>
           <ThemeProvider theme={theme}>
             <LaSAppBar/>
             <Stack sx={{paddingTop: '20px'}}>
@@ -79,14 +79,14 @@ function App() {
               </PersistQueryClientProvider>
             </Stack>
           </ThemeProvider>
-        </DialogsProvider>
+        </ConfirmProvider>
       </div>
     );
   }
   else {
     return (
       <div className="App">
-        <DialogsProvider>
+        <ConfirmProvider>
           <ThemeProvider theme={theme}>
             <LaSAppBar/>
             <Stack sx={{paddingTop: '20px'}}>
@@ -95,7 +95,7 @@ function App() {
               </QueryClientProvider>
             </Stack>
           </ThemeProvider>
-        </DialogsProvider>
+        </ConfirmProvider>
       </div>
     );
   }
