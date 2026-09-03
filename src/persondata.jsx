@@ -27,7 +27,7 @@ export default function PersonData({record, audit}) {
           snapshot('sent_name', screenshot, audit, data.person_id);
           mutation.mutate(data, {
             onError: (error, variables) => {
-              failedMutationDialog(confirmDialog, mutation)(error, variables),
+              failedMutationDialog(confirmDialog/*, mutation*/)(error, variables),
               setLocked(false);
             },
             onSuccess: ()=>{setLocked(false);},

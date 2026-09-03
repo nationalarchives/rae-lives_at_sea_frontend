@@ -1,7 +1,6 @@
 import { createStore, useStore } from 'zustand';
-import { init_data, status_encode, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils';
+import { init_data, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { isEqual } from 'lodash';
 
 //following https://stackoverflow.com/a/1479341
 //exporting only for testing purposes -- seems harmless, but perhaps could be avoided with mocks or spies
@@ -97,7 +96,7 @@ function postData(params, body) {
 //SHALLOW copy permits quick operation.
 export function rename_properties(obj, propMap, strict = true) {
   const newObj = {};
-  const mismatch = strict ? (k, v) => { console.log(`Unexpected property ${k}`); throw Error(`Unexpected property ${k}`); }
+  const mismatch = strict ? (k)    => { console.log(`Unexpected property ${k}`); throw Error(`Unexpected property ${k}`); }
                           : (k, v) => { obj[k] = v; }
   for(const [k, v] of Object.entries(obj)) {
     if(k in propMap) newObj[propMap[k]] = v;
@@ -514,7 +513,7 @@ function otherServicesMutate(queryClient, sailorType, nameId, data) {
  */
 export const refToPersonIdQuery = (piece, item) => ({
   queryKey: ['refToPersonId', {department: 'ADM', series: '188', piece: piece, item: item}],
-  queryFn: ({queryKey}) => fetchData(`person?sourcereference=ADM&sourcereference=188&sourcereference=${piece}&sourcereference=${item}`),
+  queryFn: () => fetchData(`person?sourcereference=ADM&sourcereference=188&sourcereference=${piece}&sourcereference=${item}`),
   select: (x) => x.person.person_id,
   staleTime: Infinity,
 });
@@ -559,8 +558,8 @@ export const piecesQuery = {
   staleTime: Infinity
 };
 
-function simpleTableQueryFn({queryKey}) {
-  const [, table] = queryKey;
+function simpleTableQueryFn(/*{queryKey}*/) {
+  //const [, table] = queryKey;
   return Promise.reject(new Error('simpleTableQueryFn not yet implemented'));
 }
 
@@ -626,7 +625,7 @@ export function useRecord(sailorType, nameId, selection) {
 }
 
 //This is UI functionality, shouldn't really be here. But it's always going to be needed along with this stuff. And life is short.
-export function failedMutationDialog(confirmDialog, mutation) {
+export function failedMutationDialog(confirmDialog/*, mutation*/) {
   return (error, variables) => {
     confirmDialog({
                     description: `Save failed due to Error ${error.message}. If you clear this dialog then you *might* be able to try again. Otherwise press 'Details' to contact your developer with detailed error message.`,
@@ -640,10 +639,10 @@ export function failedMutationDialog(confirmDialog, mutation) {
                                       //operation -- which it very much should be
                     if(!x.confirmed) {
                       const msg = `*Message*\n${error.message}\n\n*Variables*\n${JSON.stringify(variables)}\n\n*Stack*\n${error.stack}\n`;
-                      navigator.clipboard.writeText(msg).then((x) => {
+                      navigator.clipboard.writeText(msg).then(() => {
                           alert(`The following error message has been copied to your clipboard.\nPlease paste it to your developer.\n\n${msg}`);
                         },
-                        (x) => {
+                        () => {
                           console.error(msg);
                           alert(`The following error message has been written to the console.\nIt will remain available as long as you keep this window open and your developer can tell you how to access it.\nAlternatively, at least the beginning of the message follows in this window, you could for example take a screenshot.\n\n${msg}`)
                         }

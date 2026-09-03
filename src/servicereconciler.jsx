@@ -67,7 +67,7 @@ function XCheck({ready, checked, onChange}) {
 }
 
 export default function ServiceReconciler({record, audit}) {
-  const {sailorType, nameId} = useParams();
+  const {/*sailorType, */nameId} = useParams();
   const [searchParams,] = useSearchParams();
   const { data: serviceRecords, setData: setServiceRecords, mutation: serviceRecordsMutation, status: serviceRecordsQueryStatus } = record;
   const dirty = useContext(DirtySailorContext).service;
@@ -283,7 +283,7 @@ export default function ServiceReconciler({record, audit}) {
                        setServiceRecords(clone);
                        serviceRecordsMutation.mutate(clone, {
                          onError: (error, variables) => {
-                           failedMutationDialog(confirmDialog, serviceRecordsMutation)(error, variables);
+                           failedMutationDialog(confirmDialog/*, serviceRecordsMutation*/)(error, variables);
                            setLocked(false);
                          },
                          onSuccess: ()=>{setLocked(false)}, //see similar code in persondata.jsx for concerns around use of these callbacks

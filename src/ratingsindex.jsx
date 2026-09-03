@@ -6,7 +6,6 @@ import { Alert, Card, CardContent, Stack, Typography, Tooltip, IconButton } from
 import { ElectricBolt } from '@mui/icons-material';
 import { pieceQuery } from './queries';
 import RatingsIndexNavigator from './ratingsindexnavigator';
-import { range } from 'lodash';
 
 const NOT_WW1     =  1;
 const ALLOCATED_1 =  2;
@@ -197,7 +196,7 @@ function chunk(data, rowBoxes) {
   //       But, does it ever come up in practice?
   //       We know it happens between pieces 88 and 89, but they are not actually in the database (but,
   //       this code will come into play if we force the piece to load by putting 88 into the URL)
-  const thisEnd = ranges.this_piece.end_item;
+  //const thisEnd = ranges.this_piece.end_item;
   const nextStart = ranges.next_piece.start_item;
   const lastOutput = output[output.length - 1];
 
@@ -218,7 +217,7 @@ function chunk(data, rowBoxes) {
 
   //add as many new rows as we need to end up with an item numbered one below the lowest item of the next piece
   for(let i = lastOutputStart + rowBoxes; i < nextStart; i += rowBoxes) {
-    const start = i;
+    //const start = i;
     const end = Math.min(i + rowBoxes - 1, ranges.next_piece.start_item - 1);
     const newOutput = {
       range: i + ' - ' + end,

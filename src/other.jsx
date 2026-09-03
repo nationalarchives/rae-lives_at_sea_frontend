@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { useParams } from 'react-router';
+//import { useParams } from 'react-router';
 import { failedMutationDialog } from './queries';
 import { Alert, Button, Stack } from '@mui/material';
 import { useConfirm } from 'material-ui-confirm';
@@ -9,7 +9,7 @@ import { useEmptyRowOK , DataTable } from './datatable';
 import { DirtySailorContext } from './dirty';
 
 export default function Other({tag, columns, columnGroupingModel, record}) {
-  const { sailorType, nameId } = useParams();
+  //const { sailorType, nameId } = useParams();
   const { data, setData, mutation, status: queryStatus } = record;
   const dirty = useContext(DirtySailorContext)[tag];
   const loading = useContext(LoadingContext);
@@ -31,7 +31,7 @@ export default function Other({tag, columns, columnGroupingModel, record}) {
                   setLocked(true);
                   mutation.mutate(data, {
                     onError: (error, variables) => {
-                      failedMutationDialog(confirmDialog, mutation)(error, variables);
+                      failedMutationDialog(confirmDialog/*, mutation*/)(error, variables);
                       setLocked(false);
                     },
                     onSuccess: ()=>{setLocked(false)}, //see similar code in persondata.jsx for concerns around use of these callbacks

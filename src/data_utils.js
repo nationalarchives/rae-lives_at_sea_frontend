@@ -80,24 +80,24 @@ export const OTHER_DATA_FIELD_TYPES = {
 
 //These validators assume correct type
 export const PERSON_FIELD_VALIDATORS = {
-    forename:        (x) => true,
-    surname:         (x) => true,
+    forename:        () => true,
+    surname:         () => true,
     officialnumber:  (x) => x.match(/^[A-Z]?\d+$/),
     birthday:        (x) => x >= 0 && x <= 31,
     birthmonth:      (x) => x >= 0 && x <= 12,
     birthyear:       (x) => x === 0 || (x >= 1700 && x <= 2000), //just try to catch extremely wrong values
-    birthplace:      (x) => true,
-    birthcounty:     (x) => true,
-    occupation:      (x) => true,
+    birthplace:      () => true,
+    birthcounty:     () => true,
+    occupation:      () => true,
     dischargeday:    (x) => x >= 0 && x <= 31,
     dischargemonth:  (x) => x >= 0 && x <= 12,
     dischargeyear:   (x) => x === 0 || (x >= 1700 && x <= 2000), //just try to catch extremely wrong values
-    dischargereason: (x) => true,
+    dischargereason: () => true,
 };
 
 export const SERVICE_FIELD_VALIDATORS = {
-  ship:      (x) => true,
-  rating:    (x) => true,
+  ship:      () => true,
+  rating:    () => true,
   fromday:   (x) => x >= 0 && x <= 31,
   frommonth: (x) => x >= 0 && x <= 12,
   fromyear:  (x) => x === 0 || (x >= 1700 && x <= 2000), //just try to catch extremely wrong values
