@@ -23,6 +23,8 @@ export default defineConfig(({command, mode}) => {
     symlink('real_index.jsx', 'src/index.jsx', 'file');
   }
 
+  console.log(`Command: ${command}`);
+  console.log(`Mode:    ${mode}`);
   if(command === 'build' || mode === 'production') {
     return {
       build: {
