@@ -27,6 +27,15 @@ export default defineConfig(({command, mode}) => {
   console.log(`Mode:    ${mode}`);
   if(command === 'build' || mode === 'production') {
     return {
+      server: {
+        proxy: {
+          '/api/': {
+            target: 'http://localhost:8181',
+            //changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+          },
+        }
+      },
       build: {
         outDir: 'build',
       },
@@ -46,6 +55,15 @@ export default defineConfig(({command, mode}) => {
   }
   else if(command === 'serve') {
     return {
+      server: {
+        proxy: {
+          '/api/': {
+            target: 'http://localhost:8181',
+            //changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+          },
+        }
+      },
       plugins: [
         react(),
         {
