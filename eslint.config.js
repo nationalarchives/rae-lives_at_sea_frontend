@@ -21,6 +21,8 @@ export default defineConfig([
     rules: {
       "react/prop-types": "off",
       "react-hooks/exhaustive-deps": "error",
+      "react-hooks/static-components": "warn",
+      "react-hooks/set-state-in-effect": "warn",
       "no-unused-vars": "warn",
       "no-unreachable": "warn",
     },
