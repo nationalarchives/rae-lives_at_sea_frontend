@@ -33,7 +33,7 @@ function get_data(name, data) {
   }
 }
 
-export function snapshot(id, audit, identifier) {
+export function snapshot(id, client_snapshots, audit, identifier) {
   let stamp = new Date();
   const prefix = `LatS_${SNAP_COUNT.toString().padStart(7, 0)}_${stamp.toISOString()}_${identifier}_${id}`;
   SNAP_COUNT += 1;
@@ -47,11 +47,14 @@ export function snapshot(id, audit, identifier) {
   if(Object.getOwnPropertyNames( sync_data).length === 0)  sync_data = null;
   if(Object.getOwnPropertyNames(async_data).length === 0) async_data = null;
 
-  let oldPromise = new Promise((r) => {
-    get_data(`${prefix}__sync`,  sync_data);
-    get_data(`${prefix}_async`, async_data);
-    r();
-  });
-  return Promise.allSettled([post_data(stamp, `${prefix}__sync`,  sync_data), post_data(stamp, `${prefix}_async`, async_data), oldPromise]);
+  let promises = [post_data(stamp, `${prefix}__sync`,  sync_data), post_data(stamp, `${prefix}_async`, async_data)];
+  if(client_snapshots) {
+    promises.push(new Promise((r) => {
+      get_data(`${prefix}__sync`,  sync_data);
+      get_data(`${prefix}_async`, async_data);
+      r();
+    }));
+  }
+  return Promise.allSettled(promises);
 }
 

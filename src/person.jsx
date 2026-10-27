@@ -58,7 +58,7 @@ export default function Person() {
    * event resolve (because of spinner, perhaps because of locks) should be enough.
    */
   const onRead = useEffectEvent((label) => {
-    snapshot(label, audit, nameId);
+    snapshot(label, false, audit, nameId);
   });
   useLayoutEffect(()=>{
     onRead('rcvd_name');

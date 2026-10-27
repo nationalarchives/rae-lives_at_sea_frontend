@@ -94,7 +94,7 @@ export function useDirtySailorBlocker(dirty) {
       }
     }
     if(!(dirty.any())) { //we are about to navigate away
-      snapshot('done', {
+      snapshot('done', false, {
         name: personRecord,
         service: serviceRecord,
       }, nameId);

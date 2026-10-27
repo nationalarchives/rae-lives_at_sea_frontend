@@ -1,8 +1,6 @@
-/*
 import { create } from 'zustand'
 
 export const usePrefs = create((set) => ({
-  screenshot: false,
-  toggleScreenshot: () => set((state) => ({ screenshot: !(state.screenshot) })),
+  client_snapshots: true,
+  toggleClientSnapshots: () => set((state) => ({ client_snapshots: !(state.client_snapshots) })),
 }))
-*/
