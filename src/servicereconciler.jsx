@@ -22,7 +22,6 @@ import SadIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import { LoadingContext } from './loadingcontext';
 import { LockedContext } from './lockedcontext';
 import { snapshot } from './snapshot';
-import { usePrefs } from './prefs';
 
 import { isEqual, reduce } from 'lodash';
 
@@ -75,7 +74,6 @@ export default function ServiceReconciler({record, audit}) {
   const [locked, setLocked] = useContext(LockedContext);
   const emptyOK = useEmptyRowOK(serviceRecords.services.map((x)=>x.records), ROW_PRIMARY);
   const confirmDialog = useConfirm();
-  const screenshot = usePrefs((state)=>state.screenshot);
 
   const sameServices = (serviceRecords.services.length === 0 || serviceRecords.services.length === 1) ? true : isEqual(serviceRecords.services[0].records, serviceRecords.services[1].records);
   const xCheckReady = serviceRecords.services.every((x)=>x.userid > 0) &&
@@ -277,7 +275,7 @@ export default function ServiceReconciler({record, audit}) {
                    setLocked(true); //synchronous locking
                    const actualChange = async ()=>{
                      if(await emptyOK()) {
-                       snapshot('sent_service', screenshot, audit, nameId);
+                       snapshot('sent_service', audit, nameId);
                        const clone = structuredClone(serviceRecords);
                        clone.services = [clone.services[0]]; //if enter button enabled then must be the same, just write first table
                        setServiceRecords(clone);
