@@ -6,7 +6,7 @@ async function post_data(stamp, name, data) {
   let day   = stamp.getDate().toString().padStart(2, '0');
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
-      const response = await fetch(`/raw/${year}-${month}-${day}/${name}`, {
+      const response = await fetch(`/raw/${year}-${month}-${day}/${name}.json`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
@@ -35,7 +35,7 @@ function get_data(name, data) {
 
 export function snapshot(id, client_snapshots, audit, identifier) {
   let stamp = new Date();
-  const prefix = `LatS_${SNAP_COUNT.toString().padStart(7, 0)}_${stamp.toISOString()}_${identifier}_${id}`;
+  const prefix = `LatS_${SNAP_COUNT.toString().padStart(7, 0)}_${stamp.toISOString().replaceAll(':', '_')}_${identifier}_${id}`;
   SNAP_COUNT += 1;
 
   let  sync_data = {};

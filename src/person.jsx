@@ -18,6 +18,7 @@ import BlockNavigationDialog from './blocknavigationdialog';
 import { isNew, catref, officerref } from './data_utils';
 import { useRecord } from './queries';
 import { snapshot } from './snapshot';
+import { usePrefs } from './prefs';
 
 export default function Person() {
   const { sailorType, nameId, dataType } = useParams();
@@ -30,6 +31,7 @@ export default function Person() {
   const dirty = useDirtySailor(sailorType, nameId);
   const blocker = useDirtySailorBlocker(dirty);
   const [ locked, setLocked ] = useState(false);
+  const client_snapshots = usePrefs((state)=>state.client_snapshots);
 
   const audit = {
     name: personRecord,
@@ -58,7 +60,7 @@ export default function Person() {
    * event resolve (because of spinner, perhaps because of locks) should be enough.
    */
   const onRead = useEffectEvent((label) => {
-    snapshot(label, false, audit, nameId);
+    snapshot(label, client_snapshots, audit, nameId);
   });
   useLayoutEffect(()=>{
     onRead('rcvd_name');

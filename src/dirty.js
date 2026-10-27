@@ -5,6 +5,7 @@ import { isEqual } from 'lodash';
 import { normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES } from './data_utils';
 import { useParams } from 'react-router';
 import { snapshot } from './snapshot';
+import { usePrefs } from './prefs';
 
 class Dirty {
   any() {
@@ -56,6 +57,7 @@ export function useDirtySailor(sailorType, nameId) {
 //Block if we are navigating away from the current sailor's record and there is any dirty data
 export function useDirtySailorBlocker(dirty) {
   const {sailorType, nameId} = useParams();
+  const client_snapshots = usePrefs((state)=>state.client_snapshots);
   const personRecord  = useRecord(sailorType, nameId, 'name');
   const serviceRecord = useRecord(sailorType, nameId, 'service');
   function block({currentLocation, nextLocation}) {
@@ -94,7 +96,7 @@ export function useDirtySailorBlocker(dirty) {
       }
     }
     if(!(dirty.any())) { //we are about to navigate away
-      snapshot('done', false, {
+      snapshot('done', client_snapshots, {
         name: personRecord,
         service: serviceRecord,
       }, nameId);
