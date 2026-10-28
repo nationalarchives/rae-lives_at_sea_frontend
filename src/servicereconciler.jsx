@@ -76,6 +76,7 @@ export default function ServiceReconciler({record, audit}) {
   const emptyOK = useEmptyRowOK(serviceRecords.services.map((x)=>x.records), ROW_PRIMARY);
   const confirmDialog = useConfirm();
   const client_snapshots = usePrefs((state)=>state.client_snapshots);
+  const test_mode = usePrefs((state)=>state.test_mode);
 
   const sameServices = (serviceRecords.services.length === 0 || serviceRecords.services.length === 1) ? true : isEqual(serviceRecords.services[0].records, serviceRecords.services[1].records);
   const xCheckReady = serviceRecords.services.every((x)=>x.userid > 0) &&
@@ -277,7 +278,7 @@ export default function ServiceReconciler({record, audit}) {
                    setLocked(true); //synchronous locking
                    const actualChange = async ()=>{
                      if(await emptyOK()) {
-                       snapshot('sent_service', client_snapshots, audit, nameId);
+                       snapshot('sent_service', client_snapshots, test_mode, audit, nameId);
                        const clone = structuredClone(serviceRecords);
                        clone.services = [clone.services[0]]; //if enter button enabled then must be the same, just write first table
                        setServiceRecords(clone);

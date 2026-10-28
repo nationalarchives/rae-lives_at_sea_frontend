@@ -58,6 +58,7 @@ export function useDirtySailor(sailorType, nameId) {
 export function useDirtySailorBlocker(dirty) {
   const {sailorType, nameId} = useParams();
   const client_snapshots = usePrefs((state)=>state.client_snapshots);
+  const test_mode = usePrefs((state)=>state.test_mode);
   const personRecord  = useRecord(sailorType, nameId, 'name');
   const serviceRecord = useRecord(sailorType, nameId, 'service');
   function block({currentLocation, nextLocation}) {
@@ -96,7 +97,7 @@ export function useDirtySailorBlocker(dirty) {
       }
     }
     if(!(dirty.any())) { //we are about to navigate away
-      snapshot('done', client_snapshots, {
+      snapshot('done', client_snapshots, test_mode, {
         name: personRecord,
         service: serviceRecord,
       }, nameId);

@@ -16,6 +16,7 @@ export default function LaSAppBar() {
         </IconButton>
         <Menu anchorEl={menuAnchorEl} onClose={()=>setMenuAnchorEl(null)} onClick={()=>setMenuAnchorEl(null)} open={Boolean(menuAnchorEl)}>
           <MenuItem onClick={prefs.toggleClientSnapshots}>{prefs.client_snapshots ? "Disable client snapshots" : "Enable client snapshots"}</MenuItem>
+          <MenuItem onClick={prefs.toggleTestMode}>{prefs.test_mode ? "Switch to production mode" : "Switch to test mode"}</MenuItem>
         </Menu>
         <Typography variant='h6'>Lives at Sea</Typography>
       </Toolbar>

@@ -1,6 +1,7 @@
 import { createStore, useStore } from 'zustand';
 import { init_data, normalize, PERSON_FIELD_TYPES, SERVICE_FIELD_TYPES, OTHER_SERVICE_FIELD_TYPES, OTHER_DATA_FIELD_TYPES } from './data_utils';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { usePrefs } from './prefs.js'
 
 //following https://stackoverflow.com/a/1479341
 //exporting only for testing purposes -- seems harmless, but perhaps could be avoided with mocks or spies
@@ -46,7 +47,7 @@ function getRecord(sailorType, nameId, selection, query) {
 }
 
 function fetchData(params) {
-  const api = import.meta.env.VITE_API_ROOT + params;
+  const api = import.meta.env.VITE_API_ROOT.slice(0, -1) + (usePrefs.getState().test_mode ? '_test/' : '/') + params;
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
       const response = await fetch(api);
@@ -64,7 +65,7 @@ function fetchData(params) {
 }
 
 function postData(params, body) {
-  const api = import.meta.env.VITE_API_ROOT + params;
+  const api = import.meta.env.VITE_API_ROOT.slice(0, -1) + (usePrefs.getState().test_mode ? '_test/' : '/') + params;
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
       //const session = await fetchAuthSession();

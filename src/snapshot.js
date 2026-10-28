@@ -1,12 +1,12 @@
 let SNAP_COUNT = 0;
 
-async function post_data(stamp, name, data) {
+async function post_data(test_mode, stamp, name, data) {
   let year  = stamp.getFullYear();
   let month = stamp.getMonth() + 1; month = month.toString().padStart(2, '0');
   let day   = stamp.getDate().toString().padStart(2, '0');
   return new Promise((resolve, reject) => {
     const fetchData = async() => {
-      const response = await fetch(`/raw/${year}-${month}-${day}/${name}.json`, {
+      const response = await fetch(`/${test_mode ? 'raw_test' : 'raw'}/${year}-${month}-${day}/${name}.json`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
@@ -33,7 +33,7 @@ function get_data(name, data) {
   }
 }
 
-export function snapshot(id, client_snapshots, audit, identifier) {
+export function snapshot(id, client_snapshots, test_mode, audit, identifier) {
   let stamp = new Date();
   const prefix = `LatS_${SNAP_COUNT.toString().padStart(7, 0)}_${stamp.toISOString().replaceAll(':', '_')}_${identifier}_${id}`;
   SNAP_COUNT += 1;
@@ -47,7 +47,7 @@ export function snapshot(id, client_snapshots, audit, identifier) {
   if(Object.getOwnPropertyNames( sync_data).length === 0)  sync_data = null;
   if(Object.getOwnPropertyNames(async_data).length === 0) async_data = null;
 
-  let promises = [post_data(stamp, `${prefix}__sync`,  sync_data), post_data(stamp, `${prefix}_async`, async_data)];
+  let promises = [post_data(test_mode, stamp, `${prefix}__sync`,  sync_data), post_data(test_mode, stamp, `${prefix}_async`, async_data)];
   if(client_snapshots) {
     promises.push(new Promise((r) => {
       get_data(`${prefix}__sync`,  sync_data);

@@ -19,12 +19,13 @@ export default function PersonData({record, audit}) {
   const { sailorType, nameId } = useParams();
   const { data, setData, mutation } = record;
   const client_snapshots = usePrefs((state)=>state.client_snapshots);
+  const test_mode = usePrefs((state)=>state.test_mode);
   return (
     <Stack direction='row' width={0.9} alignItems='flex-start'>
       <Card variant='outlined'>
         <PersonTableControlPanel data={data} onChange={()=>{
           setLocked(true);
-          snapshot('sent_name', client_snapshots, audit, data.person_id);
+          snapshot('sent_name', client_snapshots, test_mode, audit, data.person_id);
           mutation.mutate(data, {
             onError: (error, variables) => {
               failedMutationDialog(confirmDialog/*, mutation*/)(error, variables),
