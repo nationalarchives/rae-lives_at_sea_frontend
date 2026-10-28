@@ -10,6 +10,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Stack } from '@mui/material';
 import { ConfirmProvider } from 'material-ui-confirm';
 import { initPieceBucket } from './queries.js';
+import { usePrefs } from './prefs.js';
 
 const queryClientOptions = import.meta.env.VITE_PERSIST_CACHE ?
   {
@@ -35,6 +36,7 @@ if(import.meta.env.VITE_BROADCAST_CACHE) {
 }
 
 function App() {
+  const test_mode = usePrefs((state)=>state.test_mode);
   useEffect(()=> {
     const preventUnload = (e) => {
       e.preventDefault();
@@ -85,7 +87,7 @@ function App() {
   }
   else {
     return (
-      <div className="App">
+      <div className="App" style={test_mode ? {"background-color": "ivory"}: {}}>
         <ConfirmProvider>
           <ThemeProvider theme={theme}>
             <LaSAppBar/>
